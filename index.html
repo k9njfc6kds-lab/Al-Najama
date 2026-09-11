@@ -1,0 +1,4070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<meta name="theme-color" content="#090b0f">
+
+<title>Al Najma | Car Wash</title>
+
+<style>
+:root{
+    --bg:#080a0d;
+    --surface:#101318;
+    --surface2:#151a20;
+    --surface3:#1b2027;
+    --border:#292f38;
+    --text:#f5f5f2;
+    --muted:#8d95a0;
+    --gold:#d5a94d;
+    --gold2:#f0ca70;
+    --green:#48d49a;
+    --red:#ed6565;
+    --blue:#62a0ff;
+    --purple:#bd83ff;
+    --radius:18px;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    background:var(--bg);
+}
+
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(circle at 90% 0%,rgba(213,169,77,.09),transparent 25%),
+        var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+
+button,
+input,
+select{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+button:active{
+    transform:scale(.98);
+}
+
+input,
+select{
+    width:100%;
+    background:#0b0e12;
+    color:white;
+    border:1px solid var(--border);
+    border-radius:11px;
+    padding:12px;
+    outline:none;
+}
+
+input:focus,
+select:focus{
+    border-color:var(--gold);
+}
+
+.app{
+    min-height:100vh;
+}
+
+.sidebar{
+    position:fixed;
+    z-index:100;
+    top:0;
+    left:0;
+    bottom:0;
+    width:250px;
+    padding:22px 15px;
+    background:#0a0c10;
+    border-right:1px solid var(--border);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:5px 10px 27px;
+}
+
+.logo{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#090a0c;
+    font-size:21px;
+    font-weight:900;
+    background:linear-gradient(145deg,#f4cf77,#9b6819);
+    box-shadow:0 8px 25px rgba(213,169,77,.18);
+}
+
+.brand-title{
+    font-size:18px;
+    font-weight:800;
+}
+
+.brand-title span{
+    color:var(--gold2);
+}
+
+.brand-sub{
+    color:var(--muted);
+    font-size:9px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin-top:3px;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.nav button{
+    border:1px solid transparent;
+    background:none;
+    color:#929aa5;
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-align:left;
+}
+
+.nav button:hover{
+    background:#15191f;
+    color:white;
+}
+
+.nav button.active{
+    color:var(--gold2);
+    background:linear-gradient(
+        90deg,
+        rgba(213,169,77,.15),
+        rgba(213,169,77,.035)
+    );
+    border-color:rgba(213,169,77,.15);
+}
+
+.nav-icon{
+    width:20px;
+    text-align:center;
+}
+
+.sidebar-bottom{
+    position:absolute;
+    left:25px;
+    right:25px;
+    bottom:20px;
+    border-top:1px solid var(--border);
+    padding-top:15px;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.6;
+}
+
+.main{
+    margin-left:250px;
+    min-height:100vh;
+    padding:28px;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.top-left{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.mobile-menu{
+    display:none;
+    border:0;
+    background:none;
+    color:white;
+    font-size:23px;
+}
+
+.page-title h1{
+    font-size:27px;
+    letter-spacing:-1px;
+}
+
+.page-title p{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:5px;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.clock{
+    color:var(--muted);
+    font-size:11px;
+}
+
+.btn{
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:white;
+    padding:10px 15px;
+    border-radius:11px;
+}
+
+.btn:hover{
+    border-color:#454c57;
+}
+
+.btn.gold{
+    border:0;
+    color:#080a0d;
+    font-weight:800;
+    background:linear-gradient(135deg,#e6bc61,#a87320);
+}
+
+.btn.red{
+    color:#ff8585;
+}
+
+.page{
+    display:none;
+}
+
+.page.active{
+    display:block;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    margin-bottom:18px;
+}
+
+.stat{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(145deg,#11151a,#0d1014);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+}
+
+.stat::after{
+    content:"";
+    position:absolute;
+    width:110px;
+    height:110px;
+    right:-45px;
+    top:-45px;
+    border-radius:50%;
+    background:rgba(213,169,77,.08);
+}
+
+.stat-label{
+    color:var(--muted);
+    font-size:11px;
+}
+
+.stat-value{
+    font-size:25px;
+    font-weight:800;
+    margin-top:12px;
+    letter-spacing:-.8px;
+}
+
+.stat-note{
+    color:var(--green);
+    font-size:10px;
+    margin-top:6px;
+}
+
+.grid{
+    display:grid;
+    gap:18px;
+}
+
+.grid-2{
+    grid-template-columns:1.35fr .65fr;
+}
+
+.card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+}
+
+.card-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:17px;
+}
+
+.card-header h2,
+.card-header h3{
+    font-size:15px;
+}
+
+.card-header span{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.table-wrap{
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:680px;
+}
+
+th{
+    color:#707884;
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    text-align:left;
+    padding:10px 8px;
+    border-bottom:1px solid var(--border);
+}
+
+td{
+    padding:13px 8px;
+    font-size:11px;
+    border-bottom:1px solid #1d2229;
+}
+
+tr:last-child td{
+    border-bottom:0;
+}
+
+.plate{
+    color:var(--gold2);
+    font-weight:800;
+    letter-spacing:.4px;
+}
+
+.status{
+    display:inline-flex;
+    padding:5px 9px;
+    border-radius:30px;
+    font-size:9px;
+    font-weight:800;
+}
+
+.status.waiting{
+    color:#f3c65e;
+    background:rgba(243,198,94,.1);
+}
+
+.status.washing{
+    color:#6ca7ff;
+    background:rgba(108,167,255,.1);
+}
+
+.status.drying{
+    color:#c28cff;
+    background:rgba(194,140,255,.1);
+}
+
+.status.ready{
+    color:#4dd99d;
+    background:rgba(77,217,157,.1);
+}
+
+.status.paid{
+    color:#a0a7b0;
+    background:rgba(160,167,176,.1);
+}
+
+.status.cancelled{
+    color:#ef6969;
+    background:rgba(239,105,105,.1);
+}
+
+.empty{
+    text-align:center;
+    color:var(--muted);
+    padding:35px 15px;
+    font-size:12px;
+}
+
+.quick-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.quick{
+    border:1px solid var(--border);
+    background:#15191f;
+    color:white;
+    border-radius:13px;
+    padding:15px;
+    text-align:left;
+}
+
+.quick:hover{
+    border-color:rgba(213,169,77,.45);
+}
+
+.quick-icon{
+    font-size:17px;
+}
+
+.quick strong{
+    display:block;
+    margin-top:8px;
+    font-size:11px;
+}
+
+.quick small{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:9px;
+}
+
+.section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:17px;
+}
+
+.section-head h2{
+    font-size:16px;
+}
+
+.section-head p{
+    color:var(--muted);
+    font-size:11px;
+    margin-top:4px;
+}
+
+.section-tools{
+    display:flex;
+    gap:8px;
+}
+
+.search{
+    width:260px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.form-group.full{
+    grid-column:1/-1;
+}
+
+label{
+    color:#969da7;
+    font-size:10px;
+}
+
+.price-box{
+    background:#0b0e12;
+    border:1px solid var(--border);
+    border-radius:11px;
+    padding:12px;
+    color:var(--gold2);
+    font-size:19px;
+    font-weight:800;
+}
+
+.modal-bg{
+    position:fixed;
+    z-index:500;
+    inset:0;
+    background:rgba(0,0,0,.75);
+    backdrop-filter:blur(7px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.modal-bg.open{
+    display:flex;
+}
+
+.modal{
+    width:min(610px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:#11151a;
+    border:1px solid #303641;
+    border-radius:20px;
+    padding:22px;
+    box-shadow:0 30px 90px rgba(0,0,0,.65);
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.modal-header h2{
+    font-size:17px;
+}
+
+.close{
+    border:0;
+    background:none;
+    color:#8c939d;
+    font-size:24px;
+}
+
+.modal-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:20px;
+}
+
+.package-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.package{
+    position:relative;
+    background:linear-gradient(145deg,#14181e,#0d1014);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:20px;
+}
+
+.package.featured{
+    border-color:rgba(213,169,77,.5);
+}
+
+.package-badge{
+    position:absolute;
+    right:13px;
+    top:13px;
+    background:var(--gold2);
+    color:#080a0d;
+    border-radius:20px;
+    padding:4px 7px;
+    font-size:7px;
+    font-weight:900;
+}
+
+.package h3{
+    font-size:15px;
+}
+
+.package-price{
+    color:var(--gold2);
+    font-size:25px;
+    font-weight:800;
+    margin:14px 0;
+}
+
+.package ul{
+    list-style:none;
+}
+
+.package li{
+    color:#9ca3ad;
+    font-size:10px;
+    padding:6px 0;
+}
+
+.package li::before{
+    content:"✓";
+    color:var(--green);
+    margin-right:7px;
+}
+
+.worker-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.worker{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:20px;
+}
+
+.worker-top{
+    display:flex;
+    gap:11px;
+    align-items:center;
+}
+
+.avatar{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#080a0d;
+    font-weight:900;
+    background:linear-gradient(135deg,#dfb65e,#855818);
+}
+
+.worker h3{
+    font-size:13px;
+}
+
+.worker small{
+    color:var(--muted);
+    font-size:9px;
+}
+
+.worker-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:17px;
+}
+
+.worker-stat{
+    background:#0c0f13;
+    padding:11px;
+    border-radius:10px;
+}
+
+.worker-stat span{
+    display:block;
+    color:var(--muted);
+    font-size:8px;
+}
+
+.worker-stat strong{
+    display:block;
+    color:var(--gold2);
+    margin-top:5px;
+    font-size:12px;
+}
+
+.progress{
+    height:5px;
+    background:#22272f;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:14px;
+}
+
+.progress div{
+    height:100%;
+    background:linear-gradient(90deg,#a17022,#f0ca70);
+}
+
+.summary-row{
+    display:flex;
+    justify-content:space-between;
+    padding:13px 0;
+    border-bottom:1px solid var(--border);
+    font-size:11px;
+}
+
+.summary-row:last-child{
+    border-bottom:0;
+}
+
+.summary-row span{
+    color:var(--muted);
+}
+
+.summary-row strong{
+    color:white;
+}
+
+.toast{
+    position:fixed;
+    z-index:1000;
+    right:22px;
+    bottom:22px;
+    background:#171c22;
+    border:1px solid #353c46;
+    border-radius:12px;
+    padding:13px 16px;
+    font-size:11px;
+    transform:translateY(100px);
+    opacity:0;
+    transition:.25s;
+}
+
+.toast.show{
+    transform:translateY(0);
+    opacity:1;
+}
+
+.offline{
+    position:fixed;
+    z-index:900;
+    left:50%;
+    bottom:15px;
+    transform:translateX(-50%);
+    background:#151a20;
+    border:1px solid var(--border);
+    color:var(--muted);
+    padding:7px 12px;
+    border-radius:20px;
+    font-size:9px;
+    display:none;
+}
+
+.offline.show{
+    display:block;
+}
+
+@media(max-width:1050px){
+
+    .stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+
+    .package-grid,
+    .worker-grid{
+        grid-template-columns:1fr 1fr;
+    }
+
+}
+
+@media(max-width:720px){
+
+    .sidebar{
+        transform:translateX(-100%);
+        transition:.25s;
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .main{
+        margin-left:0;
+        padding:17px;
+    }
+
+    .mobile-menu{
+        display:block;
+    }
+
+    .clock{
+        display:none;
+    }
+
+    .top-actions .btn:not(.gold){
+        display:none;
+    }
+
+    .stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .stat{
+        padding:15px;
+    }
+
+    .stat-value{
+        font-size:18px;
+    }
+
+    .section-head{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .section-tools{
+        width:100%;
+    }
+
+    .search{
+        width:100%;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .form-group.full{
+        grid-column:auto;
+    }
+
+    .package-grid,
+    .worker-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar" id="sidebar">
+
+<div class="brand">
+
+<div class="logo">✦</div>
+
+<div>
+<div class="brand-title">
+Al <span>Najma</span>
+</div>
+
+<div class="brand-sub">
+Car Wash Management
+</div>
+</div>
+
+</div>
+
+<nav class="nav">
+
+<button class="active" onclick="navigate('dashboard',this)">
+<span class="nav-icon">⌂</span>
+Dashboard
+</button>
+
+<button onclick="navigate('orders',this)">
+<span class="nav-icon">🚘</span>
+Orders
+</button>
+
+<button onclick="navigate('customers',this)">
+<span class="nav-icon">♙</span>
+Customers
+</button>
+
+<button onclick="navigate('workers',this)">
+<span class="nav-icon">👷</span>
+Workers
+</button>
+
+<button onclick="navigate('packages',this)">
+<span class="nav-icon">✦</span>
+Packages
+</button>
+
+<button onclick="navigate('expenses',this)">
+<span class="nav-icon">▣</span>
+Expenses
+</button>
+
+<button onclick="navigate('reports',this)">
+<span class="nav-icon">▥</span>
+Reports
+</button>
+
+<button onclick="navigate('settings',this)">
+<span class="nav-icon">⚙</span>
+Settings
+</button>
+
+</nav>
+
+<div class="sidebar-bottom">
+
+<strong>AL NAJMA</strong><br>
+Premium Car Wash Management<br>
+<span id="storageStatus">Local database ready</span>
+
+</div>
+
+</aside>
+
+
+<main class="main">
+
+<header class="topbar">
+
+<div class="top-left">
+
+<button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+
+<div class="page-title">
+
+<h1 id="pageTitle">Dashboard</h1>
+
+<p id="pageSubtitle">
+Welcome to Al Najma Car Wash.
+</p>
+
+</div>
+
+</div>
+
+<div class="top-actions">
+
+<div class="clock" id="clock"></div>
+
+<button class="btn gold" onclick="openOrderModal()">
++ New Car
+</button>
+
+</div>
+
+</header>
+
+
+<!-- DASHBOARD -->
+
+<section class="page active" id="dashboard">
+
+<div class="stats">
+
+<div class="stat">
+<div class="stat-label">Today's Revenue</div>
+<div class="stat-value" id="todayRevenue">0 IQD</div>
+<div class="stat-note">Paid orders</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Cars Today</div>
+<div class="stat-value" id="todayCars">0</div>
+<div class="stat-note">Vehicles processed</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Active Cars</div>
+<div class="stat-value" id="activeCars">0</div>
+<div class="stat-note">Currently in wash</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Today's Profit</div>
+<div class="stat-value" id="todayProfit">0 IQD</div>
+<div class="stat-note">Revenue minus expenses</div>
+</div>
+
+</div>
+
+
+<div class="grid grid-2">
+
+<div class="card">
+
+<div class="card-header">
+<h3>Live Orders</h3>
+<span id="liveCount">0 orders</span>
+</div>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Plate</th>
+<th>Vehicle</th>
+<th>Package</th>
+<th>Worker</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="dashboardOrders"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="card-header">
+<h3>Quick Actions</h3>
+</div>
+
+<div class="quick-grid">
+
+<button class="quick" onclick="openOrderModal()">
+<div class="quick-icon">🚗</div>
+<strong>New Car</strong>
+<small>Create wash order</small>
+</button>
+
+<button class="quick" onclick="navigate('customers')">
+<div class="quick-icon">♙</div>
+<strong>Customers</strong>
+<small>Customer database</small>
+</button>
+
+<button class="quick" onclick="navigate('workers')">
+<div class="quick-icon">👷</div>
+<strong>Workers</strong>
+<small>Worker performance</small>
+</button>
+
+<button class="quick" onclick="navigate('reports')">
+<div class="quick-icon">▥</div>
+<strong>Reports</strong>
+<small>Business overview</small>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ORDERS -->
+
+<section class="page" id="orders">
+
+<div class="section-head">
+
+<div>
+<h2>Orders</h2>
+<p>Every vehicle entering Al Najma.</p>
+</div>
+
+<div class="section-tools">
+
+<input
+class="search"
+id="orderSearch"
+placeholder="Search plate, vehicle or customer..."
+oninput="renderOrders()"
+>
+
+<button class="btn gold" onclick="openOrderModal()">
++ New Order
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Plate</th>
+<th>Vehicle</th>
+<th>Customer</th>
+<th>Package</th>
+<th>Worker</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="ordersTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- CUSTOMERS -->
+
+<section class="page" id="customers">
+
+<div class="section-head">
+
+<div>
+<h2>Customers</h2>
+<p>Customer history and loyalty points.</p>
+</div>
+
+<input
+class="search"
+id="customerSearch"
+placeholder="Search customer or plate..."
+oninput="renderCustomers()"
+>
+
+</div>
+
+<div class="card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Customer</th>
+<th>Phone</th>
+<th>Vehicle</th>
+<th>Plate</th>
+<th>Visits</th>
+<th>Points</th>
+<th>Total Spent</th>
+</tr>
+</thead>
+
+<tbody id="customersTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- WORKERS -->
+
+<section class="page" id="workers">
+
+<div class="section-head">
+
+<div>
+<h2>Workers</h2>
+<p>Track cars completed and commissions.</p>
+</div>
+
+</div>
+
+<div class="worker-grid" id="workerGrid"></div>
+
+</section>
+
+
+<!-- PACKAGES -->
+
+<section class="page" id="packages">
+
+<div class="section-head">
+
+<div>
+<h2>Packages</h2>
+<p>Al Najma service packages.</p>
+</div>
+
+</div>
+
+<div class="package-grid" id="packageGrid"></div>
+
+</section>
+
+
+<!-- EXPENSES -->
+
+<section class="page" id="expenses">
+
+<div class="section-head">
+
+<div>
+<h2>Expenses</h2>
+<p>Track everything the business spends.</p>
+</div>
+
+<button class="btn gold" onclick="openExpenseModal()">
++ Add Expense
+</button>
+
+</div>
+
+<div class="card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>Category</th>
+<th>Amount</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="expensesTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- REPORTS -->
+
+<section class="page" id="reports">
+
+<div class="stats">
+
+<div class="stat">
+<div class="stat-label">Total Revenue</div>
+<div class="stat-value" id="reportRevenue">0 IQD</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Total Expenses</div>
+<div class="stat-value" id="reportExpenses">0 IQD</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Net Profit</div>
+<div class="stat-value" id="reportProfit">0 IQD</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">Total Cars</div>
+<div class="stat-value" id="reportCars">0</div>
+</div>
+
+</div>
+
+<div class="grid grid-2">
+
+<div class="card">
+
+<div class="card-header">
+<h3>Package Performance</h3>
+</div>
+
+<div id="packageReport"></div>
+
+</div>
+
+<div class="card">
+
+<div class="card-header">
+<h3>Payment Breakdown</h3>
+</div>
+
+<div id="paymentReport"></div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- SETTINGS -->
+
+<section class="page" id="settings">
+
+<div class="section-head">
+
+<div>
+<h2>Settings & Backup</h2>
+<p>Your Al Najma database is stored locally on this device.</p>
+</div>
+
+</div>
+
+<div class="grid grid-2">
+
+<div class="card">
+
+<div class="card-header">
+<h3>Offline Database</h3>
+</div>
+
+<div class="summary-row">
+<span>Storage</span>
+<strong>IndexedDB</strong>
+</div>
+
+<div class="summary-row">
+<span>Internet required for data</span>
+<strong style="color:var(--green)">No</strong>
+</div>
+
+<div class="summary-row">
+<span>Orders</span>
+<strong id="settingOrders">0</strong>
+</div>
+
+<div class="summary-row">
+<span>Customers</span>
+<strong id="settingCustomers">0</strong>
+</div>
+
+<div class="summary-row">
+<span>Expenses</span>
+<strong id="settingExpenses">0</strong>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="card-header">
+<h3>Backup</h3>
+</div>
+
+<p style="color:var(--muted);font-size:11px;line-height:1.7;margin-bottom:17px">
+Export your complete Al Najma database as a backup file.
+Keep the backup somewhere safe.
+</p>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+
+<button class="btn gold" onclick="exportBackup()">
+Export Backup
+</button>
+
+<label class="btn" style="cursor:pointer">
+Import Backup
+<input
+type="file"
+accept=".json"
+style="display:none"
+onchange="importBackup(event)"
+>
+</label>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="card-header">
+<h3>Danger Zone</h3>
+</div>
+
+<p style="color:var(--muted);font-size:11px;line-height:1.7;margin-bottom:15px">
+Deleting the local database permanently removes data from this device.
+Always export a backup first.
+</p>
+
+<button class="btn red" onclick="clearDatabase()">
+Delete Local Database
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+</main>
+</div>
+
+
+<!-- ORDER MODAL -->
+
+<div class="modal-bg" id="orderModal">
+
+<div class="modal">
+
+<div class="modal-header">
+
+<h2>New Car Wash Order</h2>
+
+<button class="close" onclick="closeModal('orderModal')">
+×
+</button>
+
+</div>
+
+<form id="orderForm">
+
+<div class="form-grid">
+
+<div class="form-group">
+<label>License Plate *</label>
+<input id="plate" required placeholder="12345">
+</div>
+
+<div class="form-group">
+<label>Vehicle *</label>
+<input id="vehicle" required placeholder="Toyota Highlander">
+</div>
+
+<div class="form-group">
+<label>Customer Name</label>
+<input id="customer" placeholder="Optional">
+</div>
+
+<div class="form-group">
+<label>Phone</label>
+<input id="phone" placeholder="07XXXXXXXXX">
+</div>
+
+<div class="form-group">
+<label>Wash Package *</label>
+<select id="package" required onchange="updatePrice()"></select>
+</div>
+
+<div class="form-group">
+<label>Worker *</label>
+<select id="worker" required></select>
+</div>
+
+<div class="form-group">
+<label>Payment</label>
+<select id="payment">
+<option>Cash</option>
+<option>Card</option>
+<option>Transfer</option>
+<option>Unpaid</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Discount (IQD)</label>
+<input
+id="discount"
+type="number"
+min="0"
+value="0"
+oninput="updatePrice()"
+>
+</div>
+
+<div class="form-group full">
+
+<label>Final Price</label>
+
+<div class="price-box" id="finalPrice">
+0 IQD
+</div>
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button type="button" class="btn" onclick="closeModal('orderModal')">
+Cancel
+</button>
+
+<button type="submit" class="btn gold">
+Create Order
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+
+<!-- EXPENSE MODAL -->
+
+<div class="modal-bg" id="expenseModal">
+
+<div class="modal">
+
+<div class="modal-header">
+
+<h2>Add Expense</h2>
+
+<button class="close" onclick="closeModal('expenseModal')">
+×
+</button>
+
+</div>
+
+<form id="expenseForm">
+
+<div class="form-grid">
+
+<div class="form-group full">
+
+<label>Description *</label>
+
+<input
+id="expenseDescription"
+required
+placeholder="Chemicals, electricity, water..."
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Category</label>
+
+<select id="expenseCategory">
+
+<option>Supplies</option>
+<option>Utilities</option>
+<option>Maintenance</option>
+<option>Workers</option>
+<option>Marketing</option>
+<option>Other</option>
+
+</select>
+
+</div>
+
+<div class="form-group">
+
+<label>Amount (IQD) *</label>
+
+<input
+id="expenseAmount"
+required
+type="number"
+min="0"
+>
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button
+type="button"
+class="btn"
+onclick="closeModal('expenseModal')"
+>
+Cancel
+</button>
+
+<button class="btn gold">
+Save Expense
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<div class="offline" id="offline">
+Offline mode — data is still available
+</div>
+
+
+<script>
+
+/* ============================================================
+   AL NAJMA CAR WASH
+   OFFLINE-FIRST BUSINESS MANAGEMENT SYSTEM
+   ============================================================ */
+
+
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
+
+const DB_NAME = "AlNajmaCarWash";
+const DB_VERSION = 1;
+
+let db;
+
+
+/* ============================================================
+   DEFAULT DATA
+   ============================================================ */
+
+const PACKAGES = [
+
+    {
+        id:"basic",
+        name:"Basic Wash",
+        price:5000,
+        featured:false,
+        features:[
+            "Exterior wash",
+            "Foam treatment",
+            "Quick dry"
+        ]
+    },
+
+    {
+        id:"premium",
+        name:"Premium Wash",
+        price:10000,
+        featured:true,
+        features:[
+            "Full exterior wash",
+            "Interior vacuum",
+            "Dashboard cleaning",
+            "Premium drying"
+        ]
+    },
+
+    {
+        id:"royal",
+        name:"Royal Detail",
+        price:20000,
+        featured:false,
+        features:[
+            "Full wash",
+            "Deep interior cleaning",
+            "Tire shine",
+            "Wax protection",
+            "Premium finishing"
+        ]
+    }
+
+];
+
+
+const DEFAULT_WORKERS = [
+
+    {
+        id:1,
+        name:"Worker 1",
+        commission:1000
+    },
+
+    {
+        id:2,
+        name:"Worker 2",
+        commission:1000
+    },
+
+    {
+        id:3,
+        name:"Worker 3",
+        commission:1000
+    }
+
+];
+
+
+/* ============================================================
+   DATABASE
+   ============================================================ */
+
+function openDatabase(){
+
+    return new Promise((resolve,reject)=>{
+
+        const request =
+            indexedDB.open(DB_NAME,DB_VERSION);
+
+        request.onupgradeneeded = event => {
+
+            const database = event.target.result;
+
+            if(!database.objectStoreNames.contains("orders")){
+
+                const store =
+                    database.createObjectStore(
+                        "orders",
+                        {keyPath:"id"}
+                    );
+
+                store.createIndex(
+                    "date",
+                    "date",
+                    {unique:false}
+                );
+
+                store.createIndex(
+                    "plate",
+                    "plate",
+                    {unique:false}
+                );
+
+            }
+
+
+            if(!database.objectStoreNames.contains("customers")){
+
+                const store =
+                    database.createObjectStore(
+                        "customers",
+                        {keyPath:"id"}
+                    );
+
+                store.createIndex(
+                    "plate",
+                    "plate",
+                    {unique:false}
+                );
+
+            }
+
+
+            if(!database.objectStoreNames.contains("workers")){
+
+                database.createObjectStore(
+                    "workers",
+                    {keyPath:"id"}
+                );
+
+            }
+
+
+            if(!database.objectStoreNames.contains("expenses")){
+
+                const store =
+                    database.createObjectStore(
+                        "expenses",
+                        {keyPath:"id"}
+                    );
+
+                store.createIndex(
+                    "date",
+                    "date",
+                    {unique:false}
+                );
+
+            }
+
+        };
+
+
+        request.onsuccess = async event => {
+
+            db = event.target.result;
+
+            await seedWorkers();
+
+            resolve(db);
+
+        };
+
+
+        request.onerror = () => {
+
+            reject(request.error);
+
+        };
+
+    });
+
+}
+
+
+/* ============================================================
+   GENERIC DATABASE FUNCTIONS
+   ============================================================ */
+
+function dbPut(storeName,data){
+
+    return new Promise((resolve,reject)=>{
+
+        const transaction =
+            db.transaction(storeName,"readwrite");
+
+        const store =
+            transaction.objectStore(storeName);
+
+        const request =
+            store.put(data);
+
+        request.onsuccess = () => resolve(data);
+
+        request.onerror = () => reject(request.error);
+
+    });
+
+}
+
+
+function dbGetAll(storeName){
+
+    return new Promise((resolve,reject)=>{
+
+        const transaction =
+            db.transaction(storeName,"readonly");
+
+        const store =
+            transaction.objectStore(storeName);
+
+        const request =
+            store.getAll();
+
+        request.onsuccess =
+            () => resolve(request.result || []);
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+
+}
+
+
+function dbDelete(storeName,id){
+
+    return new Promise((resolve,reject)=>{
+
+        const transaction =
+            db.transaction(storeName,"readwrite");
+
+        const store =
+            transaction.objectStore(storeName);
+
+        const request =
+            store.delete(id);
+
+        request.onsuccess =
+            () => resolve();
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+
+}
+
+
+function dbClear(storeName){
+
+    return new Promise((resolve,reject)=>{
+
+        const transaction =
+            db.transaction(storeName,"readwrite");
+
+        const store =
+            transaction.objectStore(storeName);
+
+        const request =
+            store.clear();
+
+        request.onsuccess =
+            () => resolve();
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+
+}
+
+
+/* ============================================================
+   SEED WORKERS
+   ============================================================ */
+
+async function seedWorkers(){
+
+    const workers =
+        await dbGetAll("workers");
+
+    if(workers.length===0){
+
+        for(const worker of DEFAULT_WORKERS){
+
+            await dbPut("workers",worker);
+
+        }
+
+    }
+
+}
+
+
+/* ============================================================
+   DATA HELPERS
+   ============================================================ */
+
+async function getOrders(){
+
+    return await dbGetAll("orders");
+
+}
+
+
+async function getCustomers(){
+
+    return await dbGetAll("customers");
+
+}
+
+
+async function getWorkers(){
+
+    return await dbGetAll("workers");
+
+}
+
+
+async function getExpenses(){
+
+    return await dbGetAll("expenses");
+
+}
+
+
+function money(value){
+
+    return Number(value || 0)
+        .toLocaleString("en-US") + " IQD";
+
+}
+
+
+function today(){
+
+    const date = new Date();
+
+    return date.toISOString().split("T")[0];
+
+}
+
+
+function packageById(id){
+
+    return PACKAGES.find(
+        p => p.id === id
+    );
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+
+}
+
+
+function statusHTML(status){
+
+    return `
+        <span class="status ${status.toLowerCase()}">
+            ${escapeHTML(status)}
+        </span>
+    `;
+
+}
+
+
+async function workerById(id){
+
+    const workers =
+        await getWorkers();
+
+    return workers.find(
+        w => Number(w.id) === Number(id)
+    );
+
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+const PAGE_INFO = {
+
+    dashboard:[
+        "Dashboard",
+        "Welcome to Al Najma Car Wash."
+    ],
+
+    orders:[
+        "Orders",
+        "Manage every vehicle entering Al Najma."
+    ],
+
+    customers:[
+        "Customers",
+        "Customer history and loyalty."
+    ],
+
+    workers:[
+        "Workers",
+        "Worker performance and commissions."
+    ],
+
+    packages:[
+        "Packages",
+        "Al Najma service packages."
+    ],
+
+    expenses:[
+        "Expenses",
+        "Track business costs."
+    ],
+
+    reports:[
+        "Reports",
+        "Business performance overview."
+    ],
+
+    settings:[
+        "Settings",
+        "Backup and local database management."
+    ]
+
+};
+
+
+function navigate(page,button){
+
+    document
+        .querySelectorAll(".page")
+        .forEach(element=>{
+            element.classList.remove("active");
+        });
+
+
+    document
+        .getElementById(page)
+        .classList.add("active");
+
+
+    document
+        .querySelectorAll(".nav button")
+        .forEach(element=>{
+            element.classList.remove("active");
+        });
+
+
+    if(button){
+
+        button.classList.add("active");
+
+    }
+
+
+    document.getElementById("pageTitle")
+        .textContent =
+        PAGE_INFO[page][0];
+
+
+    document.getElementById("pageSubtitle")
+        .textContent =
+        PAGE_INFO[page][1];
+
+
+    if(window.innerWidth<=720){
+
+        document
+            .getElementById("sidebar")
+            .classList.remove("open");
+
+    }
+
+
+    renderAll();
+
+}
+
+
+function toggleSidebar(){
+
+    document
+        .getElementById("sidebar")
+        .classList.toggle("open");
+
+}
+
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+function openModal(id){
+
+    document
+        .getElementById(id)
+        .classList.add("open");
+
+}
+
+
+function closeModal(id){
+
+    document
+        .getElementById(id)
+        .classList.remove("open");
+
+}
+
+
+async function openOrderModal(){
+
+    await populateOrderForm();
+
+    openModal("orderModal");
+
+}
+
+
+function openExpenseModal(){
+
+    openModal("expenseModal");
+
+}
+
+
+/* ============================================================
+   ORDER FORM
+   ============================================================ */
+
+async function populateOrderForm(){
+
+    const packageSelect =
+        document.getElementById("package");
+
+    packageSelect.innerHTML = "";
+
+    PACKAGES.forEach(pkg=>{
+
+        const option =
+            document.createElement("option");
+
+        option.value = pkg.id;
+
+        option.textContent =
+            `${pkg.name} — ${money(pkg.price)}`;
+
+        packageSelect.appendChild(option);
+
+    });
+
+
+    const workerSelect =
+        document.getElementById("worker");
+
+    workerSelect.innerHTML = "";
+
+    const workers =
+        await getWorkers();
+
+    workers.forEach(worker=>{
+
+        const option =
+            document.createElement("option");
+
+        option.value = worker.id;
+
+        option.textContent =
+            worker.name;
+
+        workerSelect.appendChild(option);
+
+    });
+
+
+    updatePrice();
+
+}
+
+
+function updatePrice(){
+
+    const packageId =
+        document.getElementById("package").value;
+
+    const discount =
+        Number(
+            document.getElementById("discount").value || 0
+        );
+
+
+    const pkg =
+        packageById(packageId);
+
+
+    const price =
+        Math.max(
+            0,
+            Number(pkg?.price || 0) - discount
+        );
+
+
+    document.getElementById("finalPrice")
+        .textContent =
+        money(price);
+
+}
+
+
+/* ============================================================
+   CREATE ORDER
+   ============================================================ */
+
+document
+    .getElementById("orderForm")
+    .addEventListener("submit",async event=>{
+
+        event.preventDefault();
+
+
+        const plate =
+            document.getElementById("plate")
+            .value
+            .trim()
+            .toUpperCase();
+
+
+        const vehicle =
+            document.getElementById("vehicle")
+            .value
+            .trim();
+
+
+        const customer =
+            document.getElementById("customer")
+            .value
+            .trim() ||
+            "Walk-in Customer";
+
+
+        const phone =
+            document.getElementById("phone")
+            .value
+            .trim();
+
+
+        const packageId =
+            document.getElementById("package").value;
+
+
+        const workerId =
+            Number(
+                document.getElementById("worker").value
+            );
+
+
+        const payment =
+            document.getElementById("payment").value;
+
+
+        const discount =
+            Number(
+                document.getElementById("discount").value || 0
+            );
+
+
+        const pkg =
+            packageById(packageId);
+
+
+        const amount =
+            Math.max(
+                0,
+                pkg.price - discount
+            );
+
+
+        const order = {
+
+            id:crypto.randomUUID(),
+
+            date:today(),
+
+            createdAt:new Date().toISOString(),
+
+            plate,
+
+            vehicle,
+
+            customer,
+
+            phone,
+
+            packageId,
+
+            packageName:pkg.name,
+
+            basePrice:pkg.price,
+
+            discount,
+
+            amount,
+
+            workerId,
+
+            payment,
+
+            status:
+                payment === "Unpaid"
+                ? "Ready"
+                : "Paid"
+
+        };
+
+
+        await dbPut("orders",order);
+
+
+        await updateCustomer({
+
+            plate,
+
+            customer,
+
+            phone,
+
+            vehicle,
+
+            amount
+
+        });
+
+
+        document
+            .getElementById("orderForm")
+            .reset();
+
+
+        closeModal("orderModal");
+
+
+        await renderAll();
+
+
+        showToast(
+            "✓ Order saved to offline database"
+        );
+
+    });
+
+
+/* ============================================================
+   CUSTOMER MANAGEMENT
+   ============================================================ */
+
+async function updateCustomer(data){
+
+    const customers =
+        await getCustomers();
+
+
+    let customer =
+        customers.find(
+            c =>
+            String(c.plate).toUpperCase() ===
+            String(data.plate).toUpperCase()
+        );
+
+
+    if(!customer){
+
+        customer = {
+
+            id:crypto.randomUUID(),
+
+            name:data.customer,
+
+            phone:data.phone,
+
+            vehicle:data.vehicle,
+
+            plate:data.plate,
+
+            visits:0,
+
+            points:0,
+
+            totalSpent:0
+
+        };
+
+    }
+
+
+    customer.name =
+        data.customer;
+
+
+    if(data.phone){
+
+        customer.phone =
+            data.phone;
+
+    }
+
+
+    customer.vehicle =
+        data.vehicle;
+
+
+    customer.visits += 1;
+
+
+    customer.points +=
+        Math.floor(
+            Number(data.amount)/1000
+        );
+
+
+    customer.totalSpent +=
+        Number(data.amount);
+
+
+    await dbPut(
+        "customers",
+        customer
+    );
+
+}
+
+
+/* ============================================================
+   ORDER STATUS
+   ============================================================ */
+
+async function nextOrderStatus(id){
+
+    const orders =
+        await getOrders();
+
+
+    const order =
+        orders.find(o=>o.id===id);
+
+
+    if(!order) return;
+
+
+    const flow = [
+
+        "Waiting",
+        "Washing",
+        "Drying",
+        "Ready",
+        "Paid"
+
+    ];
+
+
+    const index =
+        flow.indexOf(order.status);
+
+
+    if(index < flow.length-1){
+
+        order.status =
+            flow[index+1];
+
+
+        if(order.status==="Paid"){
+
+            if(order.payment==="Unpaid"){
+
+                order.payment="Cash";
+
+            }
+
+        }
+
+
+        await dbPut(
+            "orders",
+            order
+        );
+
+
+        await renderAll();
+
+
+        showToast(
+            "Order → " + order.status
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   DELETE ORDER
+   ============================================================ */
+
+async function deleteOrder(id){
+
+    if(
+        !confirm(
+            "Delete this order permanently?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    await dbDelete(
+        "orders",
+        id
+    );
+
+
+    await renderAll();
+
+
+    showToast(
+        "Order deleted"
+    );
+
+}
+
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+async function renderDashboard(){
+
+    const orders =
+        await getOrders();
+
+    const expenses =
+        await getExpenses();
+
+
+    const todayOrders =
+        orders.filter(
+            o => o.date === today()
+        );
+
+
+    const revenue =
+        todayOrders
+        .filter(o=>o.status==="Paid")
+        .reduce(
+            (sum,o)=>sum+Number(o.amount),
+            0
+        );
+
+
+    const todayExpenses =
+        expenses
+        .filter(e=>e.date===today())
+        .reduce(
+            (sum,e)=>sum+Number(e.amount),
+            0
+        );
+
+
+    const active =
+        orders.filter(
+            o =>
+            ["Waiting","Washing","Drying","Ready"]
+            .includes(o.status)
+        ).length;
+
+
+    document.getElementById(
+        "todayRevenue"
+    ).textContent =
+        money(revenue);
+
+
+    document.getElementById(
+        "todayCars"
+    ).textContent =
+        todayOrders.length;
+
+
+    document.getElementById(
+        "activeCars"
+    ).textContent =
+        active;
+
+
+    document.getElementById(
+        "todayProfit"
+    ).textContent =
+        money(
+            revenue-todayExpenses
+        );
+
+
+    const tbody =
+        document.getElementById(
+            "dashboardOrders"
+        );
+
+
+    const latest =
+        orders.slice(0,8);
+
+
+    document.getElementById(
+        "liveCount"
+    ).textContent =
+        `${orders.length} total`;
+
+
+    if(!latest.length){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td colspan="5">
+                    <div class="empty">
+                        No orders yet.
+                    </div>
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    const workers =
+        await getWorkers();
+
+
+    tbody.innerHTML =
+        latest.map(order=>{
+
+            const worker =
+                workers.find(
+                    w =>
+                    Number(w.id) ===
+                    Number(order.workerId)
+                );
+
+
+            return `
+
+                <tr>
+
+                    <td class="plate">
+                        ${escapeHTML(order.plate)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(order.vehicle)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(order.packageName)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            worker?.name || "—"
+                        )}
+                    </td>
+
+                    <td>
+                        ${statusHTML(order.status)}
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* ============================================================
+   ORDERS PAGE
+   ============================================================ */
+
+async function renderOrders(){
+
+    const orders =
+        await getOrders();
+
+
+    const query =
+        (
+            document.getElementById(
+                "orderSearch"
+            )?.value || ""
+        ).toLowerCase();
+
+
+    const filtered =
+        orders.filter(order=>{
+
+            return (
+
+                order.plate
+                    .toLowerCase()
+                    .includes(query)
+
+                ||
+
+                order.vehicle
+                    .toLowerCase()
+                    .includes(query)
+
+                ||
+
+                order.customer
+                    .toLowerCase()
+                    .includes(query)
+
+            );
+
+        });
+
+
+    const tbody =
+        document.getElementById(
+            "ordersTable"
+        );
+
+
+    if(!filtered.length){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td colspan="8">
+                    <div class="empty">
+                        No matching orders.
+                    </div>
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    const workers =
+        await getWorkers();
+
+
+    tbody.innerHTML =
+        filtered.map(order=>{
+
+            const worker =
+                workers.find(
+                    w =>
+                    Number(w.id) ===
+                    Number(order.workerId)
+                );
+
+
+            const next =
+                order.status === "Paid"
+                ? "✓"
+                : "Next →";
+
+
+            return `
+
+                <tr>
+
+                    <td class="plate">
+                        ${escapeHTML(order.plate)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(order.vehicle)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(order.customer)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(order.packageName)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            worker?.name || "—"
+                        )}
+                    </td>
+
+                    <td>
+                        ${money(order.amount)}
+                    </td>
+
+                    <td>
+                        ${statusHTML(order.status)}
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn"
+                            style="padding:7px 9px;font-size:9px"
+                            onclick="nextOrderStatus('${order.id}')"
+                        >
+                            ${next}
+                        </button>
+
+                        <button
+                            class="btn red"
+                            style="padding:7px 9px;font-size:9px"
+                            onclick="deleteOrder('${order.id}')"
+                        >
+                            ×
+                        </button>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* ============================================================
+   CUSTOMERS PAGE
+   ============================================================ */
+
+async function renderCustomers(){
+
+    const customers =
+        await getCustomers();
+
+
+    const query =
+        (
+            document.getElementById(
+                "customerSearch"
+            )?.value || ""
+        ).toLowerCase();
+
+
+    const filtered =
+        customers.filter(customer=>{
+
+            return (
+
+                customer.name
+                    .toLowerCase()
+                    .includes(query)
+
+                ||
+
+                customer.plate
+                    .toLowerCase()
+                    .includes(query)
+
+                ||
+
+                customer.vehicle
+                    .toLowerCase()
+                    .includes(query)
+
+            );
+
+        });
+
+
+    const tbody =
+        document.getElementById(
+            "customersTable"
+        );
+
+
+    if(!filtered.length){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td colspan="7">
+                    <div class="empty">
+                        No customers found.
+                    </div>
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    tbody.innerHTML =
+        filtered.map(customer=>`
+
+            <tr>
+
+                <td>
+                    <strong>
+                        ${escapeHTML(customer.name)}
+                    </strong>
+                </td>
+
+                <td>
+                    ${escapeHTML(
+                        customer.phone || "—"
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHTML(customer.vehicle)}
+                </td>
+
+                <td class="plate">
+                    ${escapeHTML(customer.plate)}
+                </td>
+
+                <td>
+                    ${customer.visits}
+                </td>
+
+                <td style="color:var(--gold2);font-weight:800">
+                    ${customer.points}
+                </td>
+
+                <td>
+                    ${money(customer.totalSpent)}
+                </td>
+
+            </tr>
+
+        `).join("");
+
+}
+
+
+/* ============================================================
+   WORKERS PAGE
+   ============================================================ */
+
+async function renderWorkers(){
+
+    const workers =
+        await getWorkers();
+
+    const orders =
+        await getOrders();
+
+
+    const grid =
+        document.getElementById(
+            "workerGrid"
+        );
+
+
+    grid.innerHTML =
+        workers.map(worker=>{
+
+            const workerOrders =
+                orders.filter(
+                    order =>
+                    Number(order.workerId) ===
+                    Number(worker.id)
+                );
+
+
+            const completed =
+                workerOrders.filter(
+                    order =>
+                    order.status === "Paid"
+                );
+
+
+            const commission =
+                completed.length *
+                Number(worker.commission);
+
+
+            const progress =
+                Math.min(
+                    100,
+                    completed.length*10
+                );
+
+
+            return `
+
+                <div class="worker">
+
+                    <div class="worker-top">
+
+                        <div class="avatar">
+                            ${escapeHTML(
+                                worker.name.charAt(0)
+                            )}
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(worker.name)}
+                            </h3>
+
+                            <small>
+                                Active worker
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="worker-stats">
+
+                        <div class="worker-stat">
+                            <span>Total Cars</span>
+                            <strong>
+                                ${workerOrders.length}
+                            </strong>
+                        </div>
+
+                        <div class="worker-stat">
+                            <span>Completed</span>
+                            <strong>
+                                ${completed.length}
+                            </strong>
+                        </div>
+
+                        <div class="worker-stat">
+                            <span>Per Car</span>
+                            <strong>
+                                ${money(worker.commission)}
+                            </strong>
+                        </div>
+
+                        <div class="worker-stat">
+                            <span>Commission</span>
+                            <strong>
+                                ${money(commission)}
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="progress">
+                        <div
+                            style="width:${progress}%"
+                        ></div>
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* ============================================================
+   PACKAGES
+   ============================================================ */
+
+function renderPackages(){
+
+    const grid =
+        document.getElementById(
+            "packageGrid"
+        );
+
+
+    grid.innerHTML =
+        PACKAGES.map(pkg=>`
+
+            <div class="package ${
+                pkg.featured ? "featured" : ""
+            }">
+
+                ${
+                    pkg.featured
+                    ?
+                    `<div class="package-badge">
+                        MOST POPULAR
+                    </div>`
+                    :
+                    ""
+                }
+
+                <h3>
+                    ${escapeHTML(pkg.name)}
+                </h3>
+
+                <div class="package-price">
+                    ${money(pkg.price)}
+                </div>
+
+                <ul>
+
+                    ${
+                        pkg.features.map(feature=>
+                            `<li>
+                                ${escapeHTML(feature)}
+                            </li>`
+                        ).join("")
+                    }
+
+                </ul>
+
+            </div>
+
+        `).join("");
+
+}
+
+
+/* ============================================================
+   EXPENSES
+   ============================================================ */
+
+document
+    .getElementById("expenseForm")
+    .addEventListener("submit",async event=>{
+
+        event.preventDefault();
+
+
+        const expense = {
+
+            id:crypto.randomUUID(),
+
+            date:today(),
+
+            description:
+                document
+                .getElementById(
+                    "expenseDescription"
+                )
+                .value
+                .trim(),
+
+            category:
+                document
+                .getElementById(
+                    "expenseCategory"
+                )
+                .value,
+
+            amount:
+                Number(
+                    document
+                    .getElementById(
+                        "expenseAmount"
+                    )
+                    .value
+                )
+
+        };
+
+
+        await dbPut(
+            "expenses",
+            expense
+        );
+
+
+        event.target.reset();
+
+        closeModal("expenseModal");
+
+        await renderAll();
+
+        showToast(
+            "✓ Expense saved offline"
+        );
+
+    });
+
+
+async function renderExpenses(){
+
+    const expenses =
+        await getExpenses();
+
+
+    const tbody =
+        document.getElementById(
+            "expensesTable"
+        );
+
+
+    if(!expenses.length){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td colspan="5">
+                    <div class="empty">
+                        No expenses recorded.
+                    </div>
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    tbody.innerHTML =
+        expenses.map(expense=>`
+
+            <tr>
+
+                <td>
+                    ${escapeHTML(expense.date)}
+                </td>
+
+                <td>
+                    ${escapeHTML(
+                        expense.description
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHTML(
+                        expense.category
+                    )}
+                </td>
+
+                <td style="color:var(--red);font-weight:800">
+                    ${money(expense.amount)}
+                </td>
+
+                <td>
+
+                    <button
+                        class="btn red"
+                        style="padding:7px 9px;font-size:9px"
+                        onclick="deleteExpense('${expense.id}')"
+                    >
+                        Delete
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `).join("");
+
+}
+
+
+async function deleteExpense(id){
+
+    if(
+        !confirm(
+            "Delete this expense permanently?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    await dbDelete(
+        "expenses",
+        id
+    );
+
+
+    await renderAll();
+
+    showToast(
+        "Expense deleted"
+    );
+
+}
+
+
+/* ============================================================
+   REPORTS
+   ============================================================ */
+
+async function renderReports(){
+
+    const orders =
+        await getOrders();
+
+    const expenses =
+        await getExpenses();
+
+
+    const revenue =
+        orders
+        .filter(o=>o.status==="Paid")
+        .reduce(
+            (sum,o)=>sum+Number(o.amount),
+            0
+        );
+
+
+    const totalExpenses =
+        expenses.reduce(
+            (sum,e)=>sum+Number(e.amount),
+            0
+        );
+
+
+    const profit =
+        revenue-totalExpenses;
+
+
+    document.getElementById(
+        "reportRevenue"
+    ).textContent =
+        money(revenue);
+
+
+    document.getElementById(
+        "reportExpenses"
+    ).textContent =
+        money(totalExpenses);
+
+
+    document.getElementById(
+        "reportProfit"
+    ).textContent =
+        money(profit);
+
+
+    document.getElementById(
+        "reportCars"
+    ).textContent =
+        orders.length;
+
+
+    const packageReport =
+        document.getElementById(
+            "packageReport"
+        );
+
+
+    packageReport.innerHTML =
+        PACKAGES.map(pkg=>{
+
+            const packageOrders =
+                orders.filter(
+                    o=>o.packageId===pkg.id
+                );
+
+
+            const packageRevenue =
+                packageOrders
+                .filter(o=>o.status==="Paid")
+                .reduce(
+                    (sum,o)=>
+                    sum+Number(o.amount),
+                    0
+                );
+
+
+            const percentage =
+                orders.length
+                ?
+                Math.round(
+                    packageOrders.length /
+                    orders.length *
+                    100
+                )
+                :
+                0;
+
+
+            return `
+
+                <div style="margin-bottom:18px">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        font-size:11px;
+                    ">
+
+                        <strong>
+                            ${escapeHTML(pkg.name)}
+                        </strong>
+
+                        <span style="
+                            color:var(--gold2)
+                        ">
+                            ${money(packageRevenue)}
+                        </span>
+
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            style="width:${percentage}%"
+                        ></div>
+                    </div>
+
+                    <small style="
+                        color:var(--muted);
+                        font-size:9px;
+                    ">
+                        ${packageOrders.length}
+                        cars
+                    </small>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+
+    const cash =
+        orders
+        .filter(
+            o =>
+            o.status==="Paid" &&
+            o.payment==="Cash"
+        )
+        .reduce(
+            (sum,o)=>sum+Number(o.amount),
+            0
+        );
+
+
+    const card =
+        orders
+        .filter(
+            o =>
+            o.status==="Paid" &&
+            o.payment==="Card"
+        )
+        .reduce(
+            (sum,o)=>sum+Number(o.amount),
+            0
+        );
+
+
+    const transfer =
+        orders
+        .filter(
+            o =>
+            o.status==="Paid" &&
+            o.payment==="Transfer"
+        )
+        .reduce(
+            (sum,o)=>sum+Number(o.amount),
+            0
+        );
+
+
+    document.getElementById(
+        "paymentReport"
+    ).innerHTML = `
+
+        <div class="summary-row">
+            <span>Cash</span>
+            <strong>${money(cash)}</strong>
+        </div>
+
+        <div class="summary-row">
+            <span>Card</span>
+            <strong>${money(card)}</strong>
+        </div>
+
+        <div class="summary-row">
+            <span>Transfer</span>
+            <strong>${money(transfer)}</strong>
+        </div>
+
+        <div class="summary-row">
+            <span>All Paid Revenue</span>
+            <strong style="color:var(--gold2)">
+                ${money(revenue)}
+            </strong>
+        </div>
+
+    `;
+
+}
+
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+
+async function renderSettings(){
+
+    const orders =
+        await getOrders();
+
+    const customers =
+        await getCustomers();
+
+    const expenses =
+        await getExpenses();
+
+
+    document.getElementById(
+        "settingOrders"
+    ).textContent =
+        orders.length;
+
+
+    document.getElementById(
+        "settingCustomers"
+    ).textContent =
+        customers.length;
+
+
+    document.getElementById(
+        "settingExpenses"
+    ).textContent =
+        expenses.length;
+
+}
+
+
+/* ============================================================
+   BACKUP / EXPORT
+   ============================================================ */
+
+async function exportBackup(){
+
+    const backup = {
+
+        app:"Al Najma Car Wash",
+
+        version:1,
+
+        exportedAt:
+            new Date().toISOString(),
+
+        orders:
+            await getOrders(),
+
+        customers:
+            await getCustomers(),
+
+        workers:
+            await getWorkers(),
+
+        expenses:
+            await getExpenses()
+
+    };
+
+
+    const json =
+        JSON.stringify(
+            backup,
+            null,
+            2
+        );
+
+
+    const blob =
+        new Blob(
+            [json],
+            {
+                type:"application/json"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    const date =
+        new Date()
+        .toISOString()
+        .slice(0,10);
+
+
+    link.href=url;
+
+    link.download =
+        `al-najma-backup-${date}.json`;
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(url);
+
+
+    showToast(
+        "✓ Backup exported"
+    );
+
+}
+
+
+/* ============================================================
+   BACKUP / IMPORT
+   ============================================================ */
+
+async function importBackup(event){
+
+    const file =
+        event.target.files[0];
+
+
+    if(!file) return;
+
+
+    try{
+
+        const text =
+            await file.text();
+
+
+        const backup =
+            JSON.parse(text);
+
+
+        if(
+            !backup ||
+            !Array.isArray(backup.orders) ||
+            !Array.isArray(backup.customers) ||
+            !Array.isArray(backup.workers) ||
+            !Array.isArray(backup.expenses)
+        ){
+
+            throw new Error(
+                "Invalid backup"
+            );
+
+        }
+
+
+        if(
+            !confirm(
+                "Import this backup? Existing local data will be replaced."
+            )
+        ){
+
+            event.target.value="";
+            return;
+
+        }
+
+
+        await dbClear("orders");
+        await dbClear("customers");
+        await dbClear("workers");
+        await dbClear("expenses");
+
+
+        for(const item of backup.orders){
+
+            await dbPut(
+                "orders",
+                item
+            );
+
+        }
+
+
+        for(const item of backup.customers){
+
+            await dbPut(
+                "customers",
+                item
+            );
+
+        }
+
+
+        for(const item of backup.workers){
+
+            await dbPut(
+                "workers",
+                item
+            );
+
+        }
+
+
+        for(const item of backup.expenses){
+
+            await dbPut(
+                "expenses",
+                item
+            );
+
+        }
+
+
+        await renderAll();
+
+
+        showToast(
+            "✓ Backup imported successfully"
+        );
+
+
+    }catch(error){
+
+        alert(
+            "Could not import this backup file."
+        );
+
+        console.error(error);
+
+    }
+
+
+    event.target.value="";
+
+}
+
+
+/* ============================================================
+   DELETE DATABASE DATA
+   ============================================================ */
+
+async function clearDatabase(){
+
+    const first =
+        confirm(
+            "WARNING: This will delete all Al Najma data from this device."
+        );
+
+
+    if(!first) return;
+
+
+    const second =
+        confirm(
+            "Have you exported a backup? Continue?"
+        );
+
+
+    if(!second) return;
+
+
+    await dbClear("orders");
+    await dbClear("customers");
+    await dbClear("expenses");
+
+
+    /*
+       Workers are intentionally NOT deleted.
+       They are part of the system configuration.
+    */
+
+
+    await renderAll();
+
+
+    showToast(
+        "Local business data deleted"
+    );
+
+}
+
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+
+function showToast(message){
+
+    const toast =
+        document.getElementById("toast");
+
+
+    toast.textContent =
+        message;
+
+
+    toast.classList.add("show");
+
+
+    setTimeout(()=>{
+
+        toast.classList.remove("show");
+
+    },2500);
+
+}
+
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+
+function updateClock(){
+
+    const now =
+        new Date();
+
+
+    document.getElementById(
+        "clock"
+    ).textContent =
+
+        now.toLocaleDateString(
+            "en-IQ",
+            {
+                weekday:"short",
+                day:"numeric",
+                month:"short"
+            }
+        )
+
+        +
+
+        " · "
+
+        +
+
+        now.toLocaleTimeString(
+            "en-IQ",
+            {
+                hour:"2-digit",
+                minute:"2-digit"
+            }
+        );
+
+}
+
+
+setInterval(
+    updateClock,
+    1000
+);
+
+updateClock();
+
+
+/* ============================================================
+   OFFLINE DETECTION
+   ============================================================ */
+
+function updateOfflineStatus(){
+
+    const indicator =
+        document.getElementById(
+            "offline"
+        );
+
+
+    if(!navigator.onLine){
+
+        indicator.classList.add(
+            "show"
+        );
+
+    }else{
+
+        indicator.classList.remove(
+            "show"
+        );
+
+    }
+
+}
+
+
+window.addEventListener(
+    "online",
+    updateOfflineStatus
+);
+
+
+window.addEventListener(
+    "offline",
+    updateOfflineStatus
+);
+
+
+updateOfflineStatus();
+
+
+/* ============================================================
+   SERVICE WORKER
+   ============================================================ */
+
+if(
+    "serviceWorker" in navigator
+){
+
+    window.addEventListener(
+        "load",
+        ()=>{
+
+            navigator.serviceWorker
+                .register("./sw.js")
+                .then(
+                    ()=>{
+                        console.log(
+                            "Al Najma offline engine ready."
+                        );
+                    }
+                )
+                .catch(
+                    error=>{
+                        console.error(
+                            "Service worker error:",
+                            error
+                        );
+                    }
+                );
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   RENDER EVERYTHING
+   ============================================================ */
+
+async function renderAll(){
+
+    await renderDashboard();
+
+    await renderOrders();
+
+    await renderCustomers();
+
+    await renderWorkers();
+
+    renderPackages();
+
+    await renderExpenses();
+
+    await renderReports();
+
+    await renderSettings();
+
+}
+
+
+/* ============================================================
+   CLOSE MODALS BY BACKGROUND
+   ============================================================ */
+
+document
+    .querySelectorAll(".modal-bg")
+    .forEach(modal=>{
+
+        modal.addEventListener(
+            "click",
+            event=>{
+
+                if(
+                    event.target === modal
+                ){
+
+                    modal.classList.remove(
+                        "open"
+                    );
+
+                }
+
+            }
+        );
+
+    });
+
+
+/* ============================================================
+   START APPLICATION
+   ============================================================ */
+
+async function startApp(){
+
+    try{
+
+        await openDatabase();
+
+        document.getElementById(
+            "storageStatus"
+        ).textContent =
+            "✓ Offline database connected";
+
+
+        await renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Al Najma database could not be opened on this browser."
+        );
+
+    }
+
+}
+
+
+startApp();
+
+</script>
+
+</body>
+</html>
