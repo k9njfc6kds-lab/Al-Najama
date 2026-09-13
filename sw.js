@@ -1,11 +1,13 @@
-const CACHE_NAME = "al-najma-v3";
+const CACHE_NAME = "al-najma-v4";
 
 const APP_FILES = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
-    "./manifest.json"
+    "./manifest.json",
+    "./icon-192.png",
+    "./icon-512.png"
 ];
 
 
@@ -18,6 +20,14 @@ self.addEventListener("install", event => {
             .then(cache =>
                 cache.addAll(APP_FILES)
             )
+            .catch(error => {
+
+                console.error(
+                    "Cache installation failed:",
+                    error
+                );
+
+            })
 
     );
 
@@ -38,11 +48,14 @@ self.addEventListener("activate", event => {
                     keys
                         .filter(
                             key =>
-                                key !== CACHE_NAME
+                                key !==
+                                CACHE_NAME
                         )
                         .map(
                             key =>
-                                caches.delete(key)
+                                caches.delete(
+                                    key
+                                )
                         )
 
                 )
@@ -65,57 +78,113 @@ self.addEventListener("fetch", event => {
     }
 
 
+    /*
+       Only handle same-origin requests
+       with the offline cache.
+    */
+
+    const url =
+        new URL(
+            event.request.url
+        );
+
+
+    if (
+        url.origin !==
+        self.location.origin
+    ) {
+
+        return;
+
+    }
+
+
     event.respondWith(
 
         caches
-            .match(event.request)
+            .match(
+                event.request
+            )
             .then(cached => {
 
                 if (cached) {
+
                     return cached;
+
                 }
 
 
-                return fetch(event.request)
+                return fetch(
+                    event.request
+                )
 
-                    .then(response => {
+                .then(response => {
 
-                        if (
-                            !response ||
-                            response.status !== 200 ||
-                            response.type === "opaque"
-                        ) {
-
-                            return response;
-
-                        }
-
-
-                        const copy =
-                            response.clone();
-
-
-                        caches
-                            .open(CACHE_NAME)
-                            .then(cache => {
-
-                                cache.put(
-                                    event.request,
-                                    copy
-                                );
-
-                            });
-
+                    if (
+                        !response ||
+                        response.status !==
+                            200 ||
+                        response.type ===
+                            "opaque"
+                    ) {
 
                         return response;
 
-                    })
+                    }
 
-                    .catch(() =>
-                        caches.match(
-                            "./index.html"
+
+                    const copy =
+                        response.clone();
+
+
+                    caches
+                        .open(
+                            CACHE_NAME
                         )
+                        .then(cache => {
+
+                            cache.put(
+                                event.request,
+                                copy
+                            );
+
+                        });
+
+
+                    return response;
+
+                })
+
+                .catch(() => {
+
+                    /*
+                       If navigation fails while
+                       offline, return the cached
+                       application shell.
+                    */
+
+                    if (
+                        event.request.mode ===
+                        "navigate"
+                    ) {
+
+                        return caches.match(
+                            "./index.html"
+                        );
+
+                    }
+
+
+                    return new Response(
+                        "",
+                        {
+                            status: 503,
+                            statusText:
+                                "Offline"
+                        }
                     );
+
+                });
 
             })
 
