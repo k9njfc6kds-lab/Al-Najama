@@ -1,10 +1,11 @@
 /* =========================================================
    AL NAJMA CAR WASH
    Offline-first cashier / management system
+   FINAL VERSION
    ========================================================= */
 
 const DB_NAME = "AlNajmaCarWash";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 const STORES = [
     "orders",
@@ -45,22 +46,35 @@ const $ = selector => document.querySelector(selector);
 
 const $$ = selector => [...document.querySelectorAll(selector)];
 
-const uid = () =>
-    crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now() + "-" + Math.random().toString(36).slice(2);
+const uid = () => {
+    if (
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+    ) {
+        return crypto.randomUUID();
+    }
+
+    return Date.now() + "-" + Math.random().toString(36).slice(2);
+};
+
 
 function money(value) {
     return `${Math.round(Number(value) || 0).toLocaleString()} ${state.settings.currency || "IQD"}`;
 }
 
+
 function today() {
     return localDate(new Date());
 }
 
+
 function localDate(value) {
 
     const d = new Date(value);
+
+    if (Number.isNaN(d.getTime())) {
+        return "";
+    }
 
     return [
         d.getFullYear(),
@@ -69,9 +83,16 @@ function localDate(value) {
     ].join("-");
 }
 
+
 function localDateTime(value) {
 
-    return new Date(value).toLocaleString([], {
+    const d = new Date(value);
+
+    if (Number.isNaN(d.getTime())) {
+        return "—";
+    }
+
+    return d.toLocaleString([], {
         year: "numeric",
         month: "short",
         day: "2-digit",
@@ -79,6 +100,7 @@ function localDateTime(value) {
         minute: "2-digit"
     });
 }
+
 
 function escapeHTML(value) {
 
@@ -90,16 +112,65 @@ function escapeHTML(value) {
         .replaceAll("'", "&#039;");
 }
 
+
 function showToast(message) {
+
+    const container = $("#toast");
+
+    if (!container) return;
 
     const el = document.createElement("div");
 
     el.className = "toast-message";
     el.textContent = message;
 
-    $("#toast").appendChild(el);
+    container.appendChild(el);
 
     setTimeout(() => el.remove(), 3000);
+}
+
+
+function safeNumber(value, fallback = 0) {
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : fallback;
+}
+
+
+function normalizePlate(value) {
+
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+
+function isValidDateRange(from, to) {
+
+    return Boolean(
+        from &&
+        to &&
+        /^\d{4}-\d{2}-\d{2}$/.test(from) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(to) &&
+        from <= to
+    );
+
+}
+
+
+function dateDiffDays(from, to) {
+
+    const a = new Date(`${from}T00:00:00`);
+    const b = new Date(`${to}T00:00:00`);
+
+    return Math.round(
+        (b - a) / 86400000
+    );
+
 }
 
 
@@ -111,19 +182,32 @@ function openDatabase() {
 
     return new Promise((resolve, reject) => {
 
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        const request =
+            indexedDB.open(
+                DB_NAME,
+                DB_VERSION
+            );
+
 
         request.onupgradeneeded = event => {
 
-            const database = event.target.result;
+            const database =
+                event.target.result;
+
 
             STORES.forEach(store => {
 
-                if (!database.objectStoreNames.contains(store)) {
+                if (
+                    !database.objectStoreNames
+                        .contains(store)
+                ) {
 
-                    database.createObjectStore(store, {
-                        keyPath: "id"
-                    });
+                    database.createObjectStore(
+                        store,
+                        {
+                            keyPath: "id"
+                        }
+                    );
 
                 }
 
@@ -131,15 +215,23 @@ function openDatabase() {
 
         };
 
+
         request.onsuccess = () => {
 
             db = request.result;
+
+            db.onversionchange = () => {
+                db.close();
+            };
 
             resolve();
 
         };
 
-        request.onerror = () => reject(request.error);
+
+        request.onerror = () => {
+            reject(request.error);
+        };
 
     });
 
@@ -151,15 +243,22 @@ function getAll(store) {
     return new Promise((resolve, reject) => {
 
         const request =
-            db.transaction(store, "readonly")
-                .objectStore(store)
-                .getAll();
+            db.transaction(
+                store,
+                "readonly"
+            )
+            .objectStore(store)
+            .getAll();
 
-        request.onsuccess = () =>
+
+        request.onsuccess = () => {
             resolve(request.result || []);
+        };
 
-        request.onerror = () =>
+
+        request.onerror = () => {
             reject(request.error);
+        };
 
     });
 
@@ -171,15 +270,22 @@ function put(store, value) {
     return new Promise((resolve, reject) => {
 
         const request =
-            db.transaction(store, "readwrite")
-                .objectStore(store)
-                .put(value);
+            db.transaction(
+                store,
+                "readwrite"
+            )
+            .objectStore(store)
+            .put(value);
 
-        request.onsuccess = () =>
+
+        request.onsuccess = () => {
             resolve(value);
+        };
 
-        request.onerror = () =>
+
+        request.onerror = () => {
             reject(request.error);
+        };
 
     });
 
@@ -191,14 +297,22 @@ function remove(store, id) {
     return new Promise((resolve, reject) => {
 
         const request =
-            db.transaction(store, "readwrite")
-                .objectStore(store)
-                .delete(id);
+            db.transaction(
+                store,
+                "readwrite"
+            )
+            .objectStore(store)
+            .delete(id);
 
-        request.onsuccess = () => resolve();
 
-        request.onerror = () =>
+        request.onsuccess = () => {
+            resolve();
+        };
+
+
+        request.onerror = () => {
             reject(request.error);
+        };
 
     });
 
@@ -210,14 +324,22 @@ function clearStore(store) {
     return new Promise((resolve, reject) => {
 
         const request =
-            db.transaction(store, "readwrite")
-                .objectStore(store)
-                .clear();
+            db.transaction(
+                store,
+                "readwrite"
+            )
+            .objectStore(store)
+            .clear();
 
-        request.onsuccess = () => resolve();
 
-        request.onerror = () =>
+        request.onsuccess = () => {
+            resolve();
+        };
+
+
+        request.onerror = () => {
             reject(request.error);
+        };
 
     });
 
@@ -228,12 +350,16 @@ async function loadState() {
 
     for (const store of STORES) {
 
-        const values = await getAll(store);
+        const values =
+            await getAll(store);
+
 
         if (store === "settings") {
 
             state.settings =
-                values.find(x => x.id === "main") || {};
+                values.find(
+                    x => x.id === "main"
+                ) || {};
 
         } else {
 
@@ -252,9 +378,15 @@ async function loadState() {
 
 async function seedDatabase() {
 
-    const packages = await getAll("packages");
-    const workers = await getAll("workers");
-    const settings = await getAll("settings");
+    const packages =
+        await getAll("packages");
+
+    const workers =
+        await getAll("workers");
+
+    const settings =
+        await getAll("settings");
+
 
     if (!packages.length) {
 
@@ -265,6 +397,7 @@ async function seedDatabase() {
             active: true
         });
 
+
         await put("packages", {
             id: uid(),
             name: "Premium Wash",
@@ -272,6 +405,7 @@ async function seedDatabase() {
             active: true,
             featured: true
         });
+
 
         await put("packages", {
             id: uid(),
@@ -288,10 +422,16 @@ async function seedDatabase() {
         for (let i = 1; i <= 3; i++) {
 
             await put("workers", {
+
                 id: uid(),
-                name: `Worker ${i}`,
+
+                name:
+                    `Worker ${i}`,
+
                 wage: 2000,
+
                 active: true
+
             });
 
         }
@@ -302,11 +442,21 @@ async function seedDatabase() {
     if (!settings.length) {
 
         await put("settings", {
+
             id: "main",
-            businessName: "Al Najma Car Wash",
-            currency: "IQD",
-            loyaltyThreshold: 4,
-            defaultWage: 2000
+
+            businessName:
+                "Al Najma Car Wash",
+
+            currency:
+                "IQD",
+
+            loyaltyThreshold:
+                4,
+
+            defaultWage:
+                2000
+
         });
 
     }
@@ -320,18 +470,35 @@ async function seedDatabase() {
 
 async function audit(action, details) {
 
-    await put("audit", {
-        id: uid(),
-        createdAt: new Date().toISOString(),
-        action,
-        details
-    });
+    try {
+
+        await put("audit", {
+
+            id: uid(),
+
+            createdAt:
+                new Date().toISOString(),
+
+            action,
+
+            details
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Audit error:",
+            error
+        );
+
+    }
 
 }
 
 
 /* =========================================================
-   ORDER CALCULATIONS
+   ORDER FILTERING
    ========================================================= */
 
 function validOrders() {
@@ -348,7 +515,9 @@ function validOrders() {
 function paidOrders() {
 
     return validOrders().filter(
-        order => order.paid || order.payment === "Free"
+        order =>
+            order.paid === true ||
+            order.payment === "Free"
     );
 
 }
@@ -356,11 +525,20 @@ function paidOrders() {
 
 function ordersBetween(from, to) {
 
+    if (!isValidDateRange(from, to)) {
+        return [];
+    }
+
+
     return paidOrders().filter(order => {
 
-        const date = localDate(order.createdAt);
+        const date =
+            localDate(order.createdAt);
 
-        return date >= from && date <= to;
+        return (
+            date >= from &&
+            date <= to
+        );
 
     });
 
@@ -369,58 +547,183 @@ function ordersBetween(from, to) {
 
 function expensesBetween(from, to) {
 
+    if (!isValidDateRange(from, to)) {
+        return [];
+    }
+
+
     return state.expenses.filter(expense => {
 
-        const date = localDate(expense.createdAt);
+        const date =
+            localDate(expense.createdAt);
 
-        return date >= from && date <= to;
+        return (
+            date >= from &&
+            date <= to
+        );
 
     });
 
 }
 
 
+function refundedOrdersBetween(from, to) {
+
+    if (!isValidDateRange(from, to)) {
+        return [];
+    }
+
+
+    return state.orders.filter(order => {
+
+        if (order.status !== "Refunded") {
+            return false;
+        }
+
+        const date =
+            localDate(
+                order.refundedAt ||
+                order.createdAt
+            );
+
+        return (
+            date >= from &&
+            date <= to
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   PERIOD CALCULATION
+   ========================================================= */
+
 function calculatePeriod(from, to) {
 
-    const orders = ordersBetween(from, to);
-    const expenses = expensesBetween(from, to);
+    const orders =
+        ordersBetween(
+            from,
+            to
+        );
+
+
+    const expenses =
+        expensesBetween(
+            from,
+            to
+        );
+
+
+    const refunds =
+        refundedOrdersBetween(
+            from,
+            to
+        );
+
 
     const revenue =
         orders.reduce(
             (total, order) =>
-                total + Number(order.finalPrice || 0),
+                total +
+                safeNumber(
+                    order.finalPrice
+                ),
             0
         );
+
 
     const expenseTotal =
         expenses.reduce(
             (total, expense) =>
-                total + Number(expense.amount || 0),
+                total +
+                safeNumber(
+                    expense.amount
+                ),
             0
         );
+
 
     const wages =
         orders.reduce(
             (total, order) =>
-                total + Number(order.workerWage || 0),
+                total +
+                safeNumber(
+                    order.workerWage
+                ),
             0
         );
+
+
+    const refundTotal =
+        refunds.reduce(
+            (total, order) =>
+                total +
+                safeNumber(
+                    order.finalPrice
+                ),
+            0
+        );
+
+
+    const tips =
+        orders.reduce(
+            (total, order) =>
+                total +
+                safeNumber(
+                    order.tip
+                ),
+            0
+        );
+
+
+    const discounts =
+        orders.reduce(
+            (total, order) =>
+                total +
+                safeNumber(
+                    order.discount
+                ),
+            0
+        );
+
+
+    const freeWashes =
+        orders.filter(
+            order => order.freeWash
+        ).length;
+
 
     return {
 
         orders,
+
         expenses,
 
+        refunds,
+
         revenue,
+
         expenseTotal,
+
         wages,
+
+        refundTotal,
+
+        tips,
+
+        discounts,
+
+        freeWashes,
 
         profit:
             revenue -
             expenseTotal -
             wages,
 
-        cars: orders.length,
+        cars:
+            orders.length,
 
         average:
             orders.length
@@ -428,6 +731,333 @@ function calculatePeriod(from, to) {
                 : 0
 
     };
+
+}
+
+
+/* =========================================================
+   CUSTOMER REBUILD
+   =========================================================
+
+   Customer statistics are derived from order history.
+
+   This prevents:
+   - double-counting
+   - unpaid → paid bugs
+   - refund bugs
+   - void bugs
+   - loyalty counter corruption
+   ========================================================= */
+
+function customerOrders(plate) {
+
+    const normalized =
+        normalizePlate(plate);
+
+
+    return state.orders
+        .filter(order => {
+
+            if (
+                order.status === "Refunded" ||
+                order.status === "Voided"
+            ) {
+                return false;
+            }
+
+            return (
+                normalizePlate(order.plate) ===
+                normalized
+            );
+
+        })
+        .sort(
+            (a,b) =>
+                new Date(a.createdAt) -
+                new Date(b.createdAt)
+        );
+
+}
+
+
+function calculateCustomerStats(plate) {
+
+    const orders =
+        customerOrders(plate);
+
+
+    const threshold =
+        Math.max(
+            1,
+            safeNumber(
+                state.settings.loyaltyThreshold,
+                4
+            )
+        );
+
+
+    let visits = 0;
+    let paidWashes = 0;
+    let totalSpent = 0;
+
+
+    orders.forEach(order => {
+
+        visits++;
+
+
+        const isPaid =
+            order.paid === true ||
+            order.payment === "Free";
+
+
+        if (!isPaid) {
+            return;
+        }
+
+
+        if (order.freeWash) {
+
+            paidWashes = 0;
+
+        } else {
+
+            paidWashes++;
+
+            totalSpent +=
+                safeNumber(
+                    order.finalPrice
+                );
+
+        }
+
+    });
+
+
+    const lastVisit =
+        orders.length
+            ? orders[orders.length - 1].createdAt
+            : "";
+
+
+    return {
+
+        visits,
+
+        paidWashes,
+
+        totalSpent,
+
+        lastVisit,
+
+        threshold
+
+    };
+
+}
+
+
+async function rebuildCustomer(plate) {
+
+    const normalized =
+        normalizePlate(plate);
+
+
+    if (!normalized) return;
+
+
+    const customer =
+        state.customers.find(
+            c =>
+                normalizePlate(c.plate) ===
+                normalized
+        );
+
+
+    const orders =
+        customerOrders(plate);
+
+
+    if (!orders.length) {
+
+        if (customer) {
+
+            await remove(
+                "customers",
+                customer.id
+            );
+
+        }
+
+        return;
+
+    }
+
+
+    const latest =
+        orders[orders.length - 1];
+
+
+    const stats =
+        calculateCustomerStats(
+            plate
+        );
+
+
+    const record =
+        customer || {
+
+            id: uid(),
+
+            owner: "",
+
+            phone: "",
+
+            vehicle: "",
+
+            plate: plate.trim(),
+
+            visits: 0,
+
+            paidWashes: 0,
+
+            totalSpent: 0,
+
+            lastVisit: ""
+
+        };
+
+
+    /*
+       Keep the latest useful customer
+       information from the order history.
+    */
+
+    record.owner =
+        latest.customer ||
+        record.owner ||
+        "";
+
+    record.phone =
+        latest.phone ||
+        record.phone ||
+        "";
+
+    record.vehicle =
+        latest.vehicle ||
+        record.vehicle ||
+        "";
+
+    record.plate =
+        latest.plate ||
+        record.plate ||
+        plate.trim();
+
+
+    record.visits =
+        stats.visits;
+
+    record.paidWashes =
+        stats.paidWashes;
+
+    record.totalSpent =
+        stats.totalSpent;
+
+    record.lastVisit =
+        stats.lastVisit;
+
+
+    await put(
+        "customers",
+        record
+    );
+
+}
+
+
+async function rebuildAllCustomers() {
+
+    const plates = new Set();
+
+
+    state.orders.forEach(order => {
+
+        const plate =
+            normalizePlate(order.plate);
+
+        if (plate) {
+            plates.add(plate);
+        }
+
+    });
+
+
+    for (const plate of plates) {
+
+        const existing =
+            state.customers.find(
+                c =>
+                    normalizePlate(c.plate) ===
+                    plate
+            );
+
+
+        await rebuildCustomer(
+            existing?.plate || plate
+        );
+
+    }
+
+
+    /*
+       Remove customer records that no longer
+       have any valid order history.
+    */
+
+    const currentCustomers =
+        await getAll("customers");
+
+
+    for (
+        const customer
+        of currentCustomers
+    ) {
+
+        if (
+            !customerOrders(
+                customer.plate
+            ).length
+        ) {
+
+            await remove(
+                "customers",
+                customer.id
+            );
+
+        }
+
+    }
+
+}
+
+
+function getCustomerByPlate(plate) {
+
+    const normalized =
+        normalizePlate(plate);
+
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    return state.customers.find(
+        customer =>
+            normalizePlate(
+                customer.plate
+            ) === normalized
+    ) || null;
 
 }
 
@@ -447,6 +1077,7 @@ function showPage(page) {
 
     });
 
+
     $$(".nav").forEach(button => {
 
         button.classList.toggle(
@@ -456,37 +1087,63 @@ function showPage(page) {
 
     });
 
+
     const active =
         $(`.nav[data-page="${page}"] span`);
 
-    $("#pageTitle").textContent =
-        active
-            ? active.textContent
-            : page;
 
-    $("#sidebar").classList.remove("open");
+    if ($("#pageTitle")) {
 
-    window.scrollTo(0, 0);
+        $("#pageTitle").textContent =
+            active
+                ? active.textContent
+                : page;
+
+    }
+
+
+    if ($("#sidebar")) {
+
+        $("#sidebar")
+            .classList
+            .remove("open");
+
+    }
+
+
+    window.scrollTo(
+        0,
+        0
+    );
 
 }
 
 
 $$("[data-page]").forEach(button => {
 
-    button.addEventListener("click", () => {
-
-        showPage(button.dataset.page);
-
-    });
+    button.addEventListener(
+        "click",
+        () => {
+            showPage(
+                button.dataset.page
+            );
+        }
+    );
 
 });
 
 
-$("#menuButton").onclick = () => {
+if ($("#menuButton")) {
 
-    $("#sidebar").classList.toggle("open");
+    $("#menuButton").onclick = () => {
 
-};
+        $("#sidebar")
+            .classList
+            .toggle("open");
+
+    };
+
+}
 
 
 /* =========================================================
@@ -494,6 +1151,10 @@ $("#menuButton").onclick = () => {
    ========================================================= */
 
 async function refresh() {
+
+    await loadState();
+
+    await rebuildAllCustomers();
 
     await loadState();
 
@@ -526,9 +1187,14 @@ function renderAll() {
 
 function renderPackageSelect() {
 
+    if (!$("#package")) return;
+
+
     $("#package").innerHTML =
         state.packages
-            .filter(p => p.active !== false)
+            .filter(
+                p => p.active !== false
+            )
             .map(p =>
                 `<option value="${escapeHTML(p.id)}">
                     ${escapeHTML(p.name)} — ${money(p.price)}
@@ -541,11 +1207,16 @@ function renderPackageSelect() {
 
 function renderWorkerSelect() {
 
+    if (!$("#worker")) return;
+
+
     $("#worker").innerHTML =
         `<option value="">Unassigned</option>` +
 
         state.workers
-            .filter(w => w.active !== false)
+            .filter(
+                w => w.active !== false
+            )
             .map(w =>
                 `<option value="${escapeHTML(w.id)}">
                     ${escapeHTML(w.name)} — ${money(w.wage)}/car
@@ -562,15 +1233,28 @@ function renderWorkerSelect() {
 
 function renderDashboard() {
 
+    if (!$("#dashboardKpis")) {
+        return;
+    }
+
+
     const period =
-        calculatePeriod(today(), today());
+        calculatePeriod(
+            today(),
+            today()
+        );
+
 
     const active =
         state.orders.filter(
             o =>
-                !["Paid", "Refunded", "Voided"]
-                    .includes(o.status)
+                ![
+                    "Paid",
+                    "Refunded",
+                    "Voided"
+                ].includes(o.status)
         ).length;
+
 
     $("#dashboardKpis").innerHTML = `
 
@@ -599,62 +1283,87 @@ function renderDashboard() {
 
     const orders =
         state.orders
-            .filter(o => localDate(o.createdAt) === today())
-            .sort((a,b) =>
-                b.createdAt.localeCompare(a.createdAt)
+            .filter(
+                o =>
+                    localDate(
+                        o.createdAt
+                    ) === today()
             )
-            .slice(0, 8);
+            .sort(
+                (a,b) =>
+                    b.createdAt
+                    .localeCompare(
+                        a.createdAt
+                    )
+            )
+            .slice(0,8);
 
 
-    $("#dashboardOrders").innerHTML =
-        orders.length
+    if ($("#dashboardOrders")) {
 
-            ? orders.map(order => `
+        $("#dashboardOrders").innerHTML =
+            orders.length
 
-                <div class="stat-row">
+                ? orders.map(order => `
 
-                    <span>
-                        ${escapeHTML(order.plate)}
-                        ·
-                        ${escapeHTML(order.packageName)}
-                    </span>
+                    <div class="stat-row">
 
-                    <b class="money">
-                        ${money(order.finalPrice)}
-                    </b>
+                        <span>
+                            ${escapeHTML(order.plate)}
+                            ·
+                            ${escapeHTML(order.packageName)}
+                        </span>
 
-                </div>
+                        <b class="money">
+                            ${money(order.finalPrice)}
+                        </b>
 
-            `).join("")
+                    </div>
 
-            : `<div class="empty">
-                No orders today.
-              </div>`;
+                `).join("")
+
+                : `<div class="empty">
+                    No orders today.
+                   </div>`;
+
+    }
 
 
-    $("#dashboardSummary").innerHTML = `
+    if ($("#dashboardSummary")) {
 
-        <div class="stat-row">
-            <span>Revenue</span>
-            <b class="money">${money(period.revenue)}</b>
-        </div>
+        $("#dashboardSummary").innerHTML = `
 
-        <div class="stat-row">
-            <span>Expenses</span>
-            <b>${money(period.expenseTotal)}</b>
-        </div>
+            <div class="stat-row">
+                <span>Revenue</span>
+                <b class="money">
+                    ${money(period.revenue)}
+                </b>
+            </div>
 
-        <div class="stat-row">
-            <span>Worker Wages</span>
-            <b>${money(period.wages)}</b>
-        </div>
+            <div class="stat-row">
+                <span>Expenses</span>
+                <b>
+                    ${money(period.expenseTotal)}
+                </b>
+            </div>
 
-        <div class="stat-row">
-            <span>Net Profit</span>
-            <b class="money">${money(period.profit)}</b>
-        </div>
+            <div class="stat-row">
+                <span>Worker Wages</span>
+                <b>
+                    ${money(period.wages)}
+                </b>
+            </div>
 
-    `;
+            <div class="stat-row">
+                <span>Net Profit</span>
+                <b class="money">
+                    ${money(period.profit)}
+                </b>
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -663,268 +1372,348 @@ function renderDashboard() {
    CREATE ORDER
    ========================================================= */
 
-$("#orderForm").addEventListener("submit", async event => {
+if ($("#orderForm")) {
 
-    event.preventDefault();
+    $("#orderForm").addEventListener(
+        "submit",
+        async event => {
 
-    const plate =
-        $("#plate").value.trim();
+            event.preventDefault();
 
-    const vehicle =
-        $("#vehicle").value.trim();
 
-    const owner =
-        $("#customer").value.trim();
+            const plate =
+                $("#plate")
+                    .value
+                    .trim();
 
-    const phone =
-        $("#phone").value.trim();
 
-    const packageId =
-        $("#package").value;
+            const vehicle =
+                $("#vehicle")
+                    .value
+                    .trim();
 
-    const workerId =
-        $("#worker").value;
 
-    const payment =
-        $("#payment").value;
+            const owner =
+                $("#customer")
+                    .value
+                    .trim();
 
-    const discount =
-        Math.max(
-            0,
-            Number($("#discount").value) || 0
-        );
 
-    const tip =
-        Math.max(
-            0,
-            Number($("#tip").value) || 0
-        );
+            const phone =
+                $("#phone")
+                    .value
+                    .trim();
 
-    const loyaltyFree =
-        $("#loyaltyFree").checked;
 
+            const packageId =
+                $("#package").value;
 
-    const selectedPackage =
-        state.packages.find(
-            p => p.id === packageId
-        );
 
-    if (!selectedPackage) {
+            const workerId =
+                $("#worker").value;
 
-        showToast("Select a package.");
 
-        return;
+            const payment =
+                $("#payment").value;
 
-    }
 
+            const discount =
+                Math.max(
+                    0,
+                    safeNumber(
+                        $("#discount").value
+                    )
+                );
 
-    const worker =
-        state.workers.find(
-            w => w.id === workerId
-        );
 
+            const tip =
+                Math.max(
+                    0,
+                    safeNumber(
+                        $("#tip").value
+                    )
+                );
 
-    /*
-       Find customer primarily by plate.
-       This means the same vehicle can build
-       its own loyalty history.
-    */
 
-    let customer =
-        state.customers.find(
-            c =>
-                c.plate.toLowerCase() ===
-                plate.toLowerCase()
-        );
+            const loyaltyFree =
+                Boolean(
+                    $("#loyaltyFree").checked
+                );
 
 
-    if (!customer) {
+            if (!plate) {
 
-        customer = {
+                showToast(
+                    "Enter the vehicle plate."
+                );
 
-            id: uid(),
+                return;
 
-            owner,
-            phone,
-            vehicle,
-            plate,
+            }
 
-            visits: 0,
-            paidWashes: 0,
-            totalSpent: 0,
 
-            lastVisit:
-                new Date().toISOString()
+            const selectedPackage =
+                state.packages.find(
+                    p =>
+                        p.id === packageId
+                );
 
-        };
 
-    }
+            if (!selectedPackage) {
 
+                showToast(
+                    "Select a package."
+                );
 
-    const threshold =
-        Number(
-            state.settings.loyaltyThreshold
-        ) || 4;
+                return;
 
+            }
 
-    if (
-        loyaltyFree &&
-        Number(customer.paidWashes || 0) < threshold
-    ) {
 
-        showToast(
-            `Not eligible. ${customer.paidWashes || 0} / ${threshold} paid washes.`
-        );
+            if (
+                selectedPackage.active === false
+            ) {
 
-        return;
+                showToast(
+                    "This package is disabled."
+                );
 
-    }
+                return;
 
+            }
 
-    let finalPrice =
-        Math.max(
-            0,
-            Number(selectedPackage.price) -
-            discount
-        );
 
+            const packagePrice =
+                Math.max(
+                    0,
+                    safeNumber(
+                        selectedPackage.price
+                    )
+                );
 
-    let actualPayment = payment;
 
-    if (loyaltyFree) {
+            if (discount > packagePrice) {
 
-        finalPrice = 0;
-        actualPayment = "Free";
+                showToast(
+                    "Discount cannot exceed the package price."
+                );
 
-    }
+                return;
 
+            }
 
-    const paid =
-        actualPayment !== "Unpaid";
 
+            const worker =
+                state.workers.find(
+                    w =>
+                        w.id === workerId
+                );
 
-    const order = {
 
-        id: uid(),
+            /*
+               Customer is primarily tracked
+               by plate, exactly like the original.
+            */
 
-        createdAt:
-            new Date().toISOString(),
+            let customer =
+                getCustomerByPlate(
+                    plate
+                );
 
-        date: today(),
 
-        plate,
-        vehicle,
+            /*
+               Recalculate the current loyalty
+               status directly from orders so it
+               cannot be corrupted by an old record.
+            */
 
-        customer:
-            owner || customer.owner || "",
+            const customerStats =
+                calculateCustomerStats(
+                    plate
+                );
 
-        phone:
-            phone || customer.phone || "",
 
-        packageId:
-            selectedPackage.id,
+            const threshold =
+                customerStats.threshold;
 
-        packageName:
-            selectedPackage.name,
 
-        originalPrice:
-            Number(selectedPackage.price),
+            if (
+                loyaltyFree &&
+                customerStats.paidWashes <
+                    threshold
+            ) {
 
-        discount,
+                showToast(
+                    `Not eligible. ${customerStats.paidWashes} / ${threshold} paid washes.`
+                );
 
-        finalPrice,
+                return;
 
-        payment:
-            actualPayment,
+            }
 
-        workerId,
 
-        workerName:
-            worker?.name || "",
+            let finalPrice =
+                Math.max(
+                    0,
+                    packagePrice -
+                    discount
+                );
 
-        workerWage:
-            paid && worker
-                ? Number(worker.wage) || 0
-                : 0,
 
-        tip,
+            let actualPayment =
+                payment;
 
-        status:
-            paid
-                ? "Paid"
-                : "Ready",
 
-        paid,
+            if (loyaltyFree) {
 
-        freeWash:
-            loyaltyFree
+                finalPrice = 0;
 
-    };
+                actualPayment = "Free";
 
+            }
 
-    await put("orders", order);
 
+            const paid =
+                actualPayment !== "Unpaid";
 
-    customer.owner =
-        order.customer;
 
-    customer.phone =
-        order.phone;
+            const createdAt =
+                new Date().toISOString();
 
-    customer.vehicle =
-        vehicle;
 
-    customer.plate =
-        plate;
+            const order = {
 
-    customer.visits =
-        Number(customer.visits || 0) + 1;
+                id: uid(),
 
-    customer.lastVisit =
-        order.createdAt;
+                createdAt,
 
+                date:
+                    localDate(
+                        createdAt
+                    ),
 
-    if (paid) {
+                plate,
 
-        if (loyaltyFree) {
+                vehicle,
 
-            customer.paidWashes = 0;
+                customer:
+                    owner ||
+                    customer?.owner ||
+                    "",
 
-        } else {
+                phone:
+                    phone ||
+                    customer?.phone ||
+                    "",
 
-            customer.paidWashes =
-                Number(customer.paidWashes || 0) + 1;
+                packageId:
+                    selectedPackage.id,
+
+                packageName:
+                    selectedPackage.name,
+
+                originalPrice:
+                    packagePrice,
+
+                discount,
+
+                finalPrice,
+
+                payment:
+                    actualPayment,
+
+                workerId,
+
+                workerName:
+                    worker?.name ||
+                    "",
+
+                workerWage:
+                    paid && worker
+                        ? Math.max(
+                            0,
+                            safeNumber(
+                                worker.wage
+                            )
+                        )
+                        : 0,
+
+                tip,
+
+                status:
+                    paid
+                        ? "Paid"
+                        : "Ready",
+
+                paid,
+
+                freeWash:
+                    loyaltyFree,
+
+                /*
+                   These fields help preserve
+                   historical meaning even if
+                   the package/worker is edited
+                   later.
+                */
+
+                packagePriceAtSale:
+                    packagePrice,
+
+                workerWageAtSale:
+                    worker
+                        ? Math.max(
+                            0,
+                            safeNumber(
+                                worker.wage
+                            )
+                        )
+                        : 0
+
+            };
+
+
+            await put(
+                "orders",
+                order
+            );
+
+
+            /*
+               Customer is rebuilt from actual
+               order history.
+            */
+
+            await loadState();
+
+            await rebuildCustomer(
+                plate
+            );
+
+
+            await audit(
+                "CREATE_ORDER",
+                order
+            );
+
+
+            await refresh();
+
+
+            $("#orderForm").reset();
+
+
+            showToast(
+                "Order created successfully."
+            );
+
+
+            showPage("orders");
 
         }
-
-        customer.totalSpent =
-            Number(customer.totalSpent || 0) +
-            finalPrice;
-
-    }
-
-
-    await put(
-        "customers",
-        customer
     );
 
-
-    await audit(
-        "CREATE_ORDER",
-        order
-    );
-
-
-    await refresh();
-
-    $("#orderForm").reset();
-
-    showToast("Order created successfully.");
-
-    showPage("orders");
-
-});
+}
 
 
 /* =========================================================
@@ -933,9 +1722,22 @@ $("#orderForm").addEventListener("submit", async event => {
 
 function renderOrders() {
 
+    if (
+        !$("#ordersTable") ||
+        !$("#orderSearch") ||
+        !$("#orderStatusFilter")
+    ) {
+        return;
+    }
+
+
     const search =
-        ($("#orderSearch").value || "")
-            .toLowerCase();
+        (
+            $("#orderSearch").value ||
+            ""
+        )
+        .toLowerCase();
+
 
     const filter =
         $("#orderStatusFilter").value;
@@ -943,8 +1745,12 @@ function renderOrders() {
 
     let orders =
         [...state.orders]
-            .sort((a,b) =>
-                b.createdAt.localeCompare(a.createdAt)
+            .sort(
+                (a,b) =>
+                    b.createdAt
+                    .localeCompare(
+                        a.createdAt
+                    )
             );
 
 
@@ -958,7 +1764,9 @@ function renderOrders() {
                     order.customer,
                     order.phone,
                     order.packageName,
-                    order.workerName
+                    order.workerName,
+                    order.payment,
+                    order.status
                 ]
                 .join(" ")
                 .toLowerCase()
@@ -987,32 +1795,53 @@ function renderOrders() {
         <tr>
 
             <td>
-                ${localDateTime(order.createdAt)}
+                ${localDateTime(
+                    order.createdAt
+                )}
             </td>
 
             <td>
-                <b>${escapeHTML(order.plate)}</b>
+                <b>
+                    ${escapeHTML(
+                        order.plate
+                    )}
+                </b>
+
                 <br>
+
                 <span class="muted">
-                    ${escapeHTML(order.vehicle)}
+                    ${escapeHTML(
+                        order.vehicle
+                    )}
                 </span>
             </td>
 
             <td>
-                ${escapeHTML(order.customer || "—")}
+                ${escapeHTML(
+                    order.customer ||
+                    "—"
+                )}
+
                 <br>
+
                 <span class="muted">
-                    ${escapeHTML(order.phone || "")}
+                    ${escapeHTML(
+                        order.phone ||
+                        ""
+                    )}
                 </span>
             </td>
 
             <td>
-                ${escapeHTML(order.packageName)}
+                ${escapeHTML(
+                    order.packageName
+                )}
 
                 ${
                     order.freeWash
-                    ? `<br><span class="badge">
-                        LOYALTY FREE
+                    ? `<br>
+                       <span class="badge">
+                       LOYALTY FREE
                        </span>`
                     : ""
                 }
@@ -1020,17 +1849,25 @@ function renderOrders() {
             </td>
 
             <td>
-                ${escapeHTML(order.workerName || "—")}
+                ${escapeHTML(
+                    order.workerName ||
+                    "—"
+                )}
             </td>
 
             <td class="money">
-                ${money(order.finalPrice)}
+
+                ${money(
+                    order.finalPrice
+                )}
 
                 ${
                     order.discount
                     ? `<br>
                        <span class="muted">
-                       −${money(order.discount)}
+                       −${money(
+                           order.discount
+                       )}
                        </span>`
                     : ""
                 }
@@ -1038,13 +1875,19 @@ function renderOrders() {
             </td>
 
             <td>
-                ${escapeHTML(order.payment)}
+                ${escapeHTML(
+                    order.payment
+                )}
             </td>
 
             <td>
+
                 <span class="badge">
-                    ${escapeHTML(order.status)}
+                    ${escapeHTML(
+                        order.status
+                    )}
                 </span>
+
             </td>
 
             <td>
@@ -1052,8 +1895,11 @@ function renderOrders() {
                 <div class="actions">
 
                 ${
-                    !["Paid","Refunded","Voided"]
-                    .includes(order.status)
+                    ![
+                        "Paid",
+                        "Refunded",
+                        "Voided"
+                    ].includes(order.status)
 
                     ? `<button
                         class="small-button"
@@ -1070,8 +1916,10 @@ function renderOrders() {
                 </button>
 
                 ${
-                    !["Refunded","Voided"]
-                    .includes(order.status)
+                    ![
+                        "Refunded",
+                        "Voided"
+                    ].includes(order.status)
 
                     ? `<button
                         class="small-button"
@@ -1082,8 +1930,10 @@ function renderOrders() {
                 }
 
                 ${
-                    !["Refunded","Voided"]
-                    .includes(order.status)
+                    ![
+                        "Refunded",
+                        "Voided"
+                    ].includes(order.status)
 
                     ? `<button
                         class="small-button"
@@ -1112,15 +1962,24 @@ function renderOrders() {
 }
 
 
-$("#orderSearch").addEventListener(
-    "input",
-    renderOrders
-);
+if ($("#orderSearch")) {
 
-$("#orderStatusFilter").addEventListener(
-    "change",
-    renderOrders
-);
+    $("#orderSearch").addEventListener(
+        "input",
+        renderOrders
+    );
+
+}
+
+
+if ($("#orderStatusFilter")) {
+
+    $("#orderStatusFilter").addEventListener(
+        "change",
+        renderOrders
+    );
+
+}
 
 
 /* =========================================================
@@ -1134,7 +1993,19 @@ async function advanceOrder(id) {
             o => o.id === id
         );
 
+
     if (!order) return;
+
+
+    if (
+        [
+            "Refunded",
+            "Voided",
+            "Paid"
+        ].includes(order.status)
+    ) {
+        return;
+    }
 
 
     const flow = [
@@ -1147,10 +2018,16 @@ async function advanceOrder(id) {
 
 
     const index =
-        flow.indexOf(order.status);
+        flow.indexOf(
+            order.status
+        );
 
 
     if (index < 0) return;
+
+
+    const oldStatus =
+        order.status;
 
 
     order.status =
@@ -1166,9 +2043,20 @@ async function advanceOrder(id) {
 
         order.paid = true;
 
-        if (order.payment === "Unpaid") {
 
-            order.payment = "Cash";
+        /*
+           If an order was created as unpaid,
+           Cash becomes its default payment
+           method when it is finally paid.
+        */
+
+        if (
+            !order.payment ||
+            order.payment === "Unpaid"
+        ) {
+
+            order.payment =
+                "Cash";
 
         }
 
@@ -1180,28 +2068,63 @@ async function advanceOrder(id) {
 
             const worker =
                 state.workers.find(
-                    w => w.id === order.workerId
+                    w =>
+                        w.id ===
+                        order.workerId
                 );
 
+
             order.workerWage =
-                Number(worker?.wage) || 0;
+                Math.max(
+                    0,
+                    safeNumber(
+                        worker?.wage
+                    )
+                );
+
+
+            order.workerWageAtSale =
+                order.workerWage;
+
+            order.workerName =
+                worker?.name || "";
 
         }
 
     }
 
 
-    await put("orders", order);
+    await put(
+        "orders",
+        order
+    );
+
+
+    /*
+       IMPORTANT:
+       This fixes the old unpaid → paid
+       customer tracking bug.
+    */
+
+    await loadState();
+
+    await rebuildCustomer(
+        order.plate
+    );
+
 
     await audit(
         "ADVANCE_ORDER",
         {
             id,
+            from: oldStatus,
             status: order.status
         }
     );
 
+
     await refresh();
+
 
     showToast(
         `Order → ${order.status}`
@@ -1210,7 +2133,8 @@ async function advanceOrder(id) {
 }
 
 
-window.advanceOrder = advanceOrder;
+window.advanceOrder =
+    advanceOrder;
 
 
 /* =========================================================
@@ -1224,36 +2148,80 @@ async function voidOrder(id) {
             o => o.id === id
         );
 
+
     if (!order) return;
+
+
+    if (
+        [
+            "Refunded",
+            "Voided"
+        ].includes(order.status)
+    ) {
+        return;
+    }
 
 
     if (
         !confirm(
             "Void this order?"
         )
-    ) return;
+    ) {
+        return;
+    }
 
 
-    order.status = "Voided";
+    const oldStatus =
+        order.status;
+
+
+    order.status =
+        "Voided";
+
+
     order.voidedAt =
         new Date().toISOString();
 
 
-    await put("orders", order);
-
-    await audit(
-        "VOID_ORDER",
+    await put(
+        "orders",
         order
     );
 
+
+    /*
+       Customer statistics are rebuilt
+       without this order.
+    */
+
+    await loadState();
+
+    await rebuildCustomer(
+        order.plate
+    );
+
+
+    await audit(
+        "VOID_ORDER",
+        {
+            order,
+            previousStatus: oldStatus
+        }
+    );
+
+
     await refresh();
 
-    showToast("Order voided.");
+
+    showToast(
+        "Order voided."
+    );
 
 }
 
 
-window.voidOrder = voidOrder;
+window.voidOrder =
+    voidOrder;
 
 
 async function refundOrder(id) {
@@ -1263,43 +2231,85 @@ async function refundOrder(id) {
             o => o.id === id
         );
 
+
     if (!order) return;
 
 
     if (
+        [
+            "Refunded",
+            "Voided"
+        ].includes(order.status)
+    ) {
+        return;
+    }
+
+
+    if (!order.paid) {
+
+        showToast(
+            "Unpaid orders should be voided, not refunded."
+        );
+
+        return;
+
+    }
+
+
+    if (
         !confirm(
-            "Refund this order?"
+            `Refund ${money(order.finalPrice)} for this order?`
         )
-    ) return;
+    ) {
+        return;
+    }
 
 
-    order.status = "Refunded";
+    order.status =
+        "Refunded";
+
+
     order.refundedAt =
         new Date().toISOString();
 
 
+    await put(
+        "orders",
+        order
+    );
+
+
     /*
-       We do not delete the order.
-       It remains visible for audit/history,
-       but is excluded from revenue.
+       Rebuild customer history so the
+       refunded wash no longer contributes
+       to spending or loyalty.
     */
 
+    await loadState();
 
-    await put("orders", order);
+    await rebuildCustomer(
+        order.plate
+    );
+
 
     await audit(
         "REFUND_ORDER",
         order
     );
 
+
     await refresh();
 
-    showToast("Order refunded.");
+
+    showToast(
+        "Order refunded."
+    );
 
 }
 
 
-window.refundOrder = refundOrder;
+window.refundOrder =
+    refundOrder;
 
 
 /* =========================================================
@@ -1308,15 +2318,30 @@ window.refundOrder = refundOrder;
 
 function renderCustomers() {
 
+    if (
+        !$("#customersTable") ||
+        !$("#customerSearch")
+    ) {
+        return;
+    }
+
+
     const search =
-        ($("#customerSearch").value || "")
-            .toLowerCase();
+        (
+            $("#customerSearch").value ||
+            ""
+        )
+        .toLowerCase();
 
 
     const threshold =
-        Number(
-            state.settings.loyaltyThreshold
-        ) || 4;
+        Math.max(
+            1,
+            safeNumber(
+                state.settings.loyaltyThreshold,
+                4
+            )
+        );
 
 
     const customers =
@@ -1332,8 +2357,16 @@ function renderCustomers() {
                 .toLowerCase()
                 .includes(search)
             )
-            .sort((a,b) =>
-                b.lastVisit.localeCompare(a.lastVisit)
+            .sort(
+                (a,b) =>
+                    String(
+                        b.lastVisit || ""
+                    )
+                    .localeCompare(
+                        String(
+                            a.lastVisit || ""
+                        )
+                    )
             );
 
 
@@ -1344,27 +2377,39 @@ function renderCustomers() {
         ? customers.map(customer => {
 
             const progress =
-                Number(customer.paidWashes || 0)
-                % threshold;
+                Number(
+                    customer.paidWashes || 0
+                ) % threshold;
+
 
             return `
 
             <tr>
 
                 <td>
-                    ${escapeHTML(customer.owner || "—")}
+                    ${escapeHTML(
+                        customer.owner ||
+                        "—"
+                    )}
                 </td>
 
                 <td>
-                    ${escapeHTML(customer.vehicle)}
+                    ${escapeHTML(
+                        customer.vehicle
+                    )}
                 </td>
 
                 <td>
-                    ${escapeHTML(customer.plate)}
+                    ${escapeHTML(
+                        customer.plate
+                    )}
                 </td>
 
                 <td>
-                    ${escapeHTML(customer.phone || "")}
+                    ${escapeHTML(
+                        customer.phone ||
+                        ""
+                    )}
                 </td>
 
                 <td>
@@ -1385,7 +2430,9 @@ function renderCustomers() {
                         <i style="
                         width:${Math.min(
                             100,
-                            progress / threshold * 100
+                            progress /
+                            threshold *
+                            100
                         )}%">
                         </i>
                     </div>
@@ -1393,11 +2440,19 @@ function renderCustomers() {
                 </td>
 
                 <td class="money">
-                    ${money(customer.totalSpent)}
+                    ${money(
+                        customer.totalSpent
+                    )}
                 </td>
 
                 <td>
-                    ${localDateTime(customer.lastVisit)}
+                    ${
+                        customer.lastVisit
+                        ? localDateTime(
+                            customer.lastVisit
+                        )
+                        : "—"
+                    }
                 </td>
 
             </tr>
@@ -1417,10 +2472,14 @@ function renderCustomers() {
 }
 
 
-$("#customerSearch").addEventListener(
-    "input",
-    renderCustomers
-);
+if ($("#customerSearch")) {
+
+    $("#customerSearch").addEventListener(
+        "input",
+        renderCustomers
+    );
+
+}
 
 
 /* =========================================================
@@ -1429,13 +2488,20 @@ $("#customerSearch").addEventListener(
 
 function renderWorkers() {
 
+    if (!$("#workersGrid")) {
+        return;
+    }
+
+
     $("#workersGrid").innerHTML =
         state.workers.map(worker => {
 
             const orders =
                 paidOrders()
                     .filter(
-                        o => o.workerId === worker.id
+                        o =>
+                            o.workerId ===
+                            worker.id
                     );
 
 
@@ -1443,7 +2509,9 @@ function renderWorkers() {
                 orders.reduce(
                     (sum,o) =>
                         sum +
-                        Number(o.workerWage || 0),
+                        safeNumber(
+                            o.workerWage
+                        ),
                     0
                 );
 
@@ -1452,7 +2520,9 @@ function renderWorkers() {
                 orders.reduce(
                     (sum,o) =>
                         sum +
-                        Number(o.tip || 0),
+                        safeNumber(
+                            o.tip
+                        ),
                     0
                 );
 
@@ -1462,17 +2532,23 @@ function renderWorkers() {
             <div class="worker-card">
 
                 <h3>
-                    ${escapeHTML(worker.name)}
+                    ${escapeHTML(
+                        worker.name
+                    )}
                 </h3>
 
                 <div class="muted">
-                    ${worker.active === false
-                        ? "Inactive"
-                        : "Active"}
+                    ${
+                        worker.active === false
+                            ? "Inactive"
+                            : "Active"
+                    }
                 </div>
 
                 <div class="big-price">
-                    ${money(worker.wage)}
+                    ${money(
+                        worker.wage
+                    )}
                     <small>/ car</small>
                 </div>
 
@@ -1502,9 +2578,11 @@ function renderWorkers() {
                     <button
                         class="small-button"
                         onclick="toggleWorker('${worker.id}')">
-                        ${worker.active === false
-                            ? "Enable"
-                            : "Disable"}
+                        ${
+                            worker.active === false
+                                ? "Enable"
+                                : "Disable"
+                        }
                     </button>
 
                     <button
@@ -1524,74 +2602,108 @@ function renderWorkers() {
 }
 
 
-$("#addWorker").onclick = () => {
+if ($("#addWorker")) {
 
-    openModal(
-        "Add Worker",
+    $("#addWorker").onclick = () => {
 
-        `
-        <form id="workerForm" class="stack">
+        openModal(
 
-            <label>
-                Worker Name
-                <input id="modalWorkerName" required>
-            </label>
+            "Add Worker",
 
-            <label>
-                Wage Per Car
-                <input
-                    id="modalWorkerWage"
-                    type="number"
-                    value="${state.settings.defaultWage || 2000}"
-                    min="0"
-                    required>
-            </label>
+            `
+            <form id="workerForm" class="stack">
 
-            <button class="gold-button">
-                Save Worker
-            </button>
+                <label>
+                    Worker Name
+                    <input
+                        id="modalWorkerName"
+                        required>
+                </label>
 
-        </form>
-        `,
+                <label>
+                    Wage Per Car
+                    <input
+                        id="modalWorkerWage"
+                        type="number"
+                        value="${safeNumber(
+                            state.settings.defaultWage,
+                            2000
+                        )}"
+                        min="0"
+                        required>
+                </label>
 
-        async () => {
+                <button class="gold-button">
+                    Save Worker
+                </button>
 
-            const worker = {
+            </form>
+            `,
 
-                id: uid(),
+            async () => {
 
-                name:
+                const name =
                     $("#modalWorkerName")
-                    .value.trim(),
-
-                wage:
-                    Number(
-                        $("#modalWorkerWage")
                         .value
-                    ) || 0,
+                        .trim();
 
-                active: true
 
-            };
+                if (!name) {
 
-            await put(
-                "workers",
-                worker
-            );
+                    showToast(
+                        "Enter a worker name."
+                    );
 
-            await audit(
-                "ADD_WORKER",
-                worker
-            );
+                    return;
 
-            await refresh();
+                }
 
-            showToast("Worker added.");
 
-        }
-    );
+                const worker = {
 
-};
+                    id: uid(),
+
+                    name,
+
+                    wage:
+                        Math.max(
+                            0,
+                            safeNumber(
+                                $("#modalWorkerWage")
+                                    .value
+                            )
+                        ),
+
+                    active: true
+
+                };
+
+
+                await put(
+                    "workers",
+                    worker
+                );
+
+
+                await audit(
+                    "ADD_WORKER",
+                    worker
+                );
+
+
+                await refresh();
+
+
+                showToast(
+                    "Worker added."
+                );
+
+            }
+        );
+
+    };
+
+}
 
 
 async function editWorker(id) {
@@ -1600,6 +2712,7 @@ async function editWorker(id) {
         state.workers.find(
             w => w.id === id
         );
+
 
     if (!worker) return;
 
@@ -1615,7 +2728,9 @@ async function editWorker(id) {
                 Name
                 <input
                     id="modalWorkerName"
-                    value="${escapeHTML(worker.name)}"
+                    value="${escapeHTML(
+                        worker.name
+                    )}"
                     required>
             </label>
 
@@ -1625,7 +2740,9 @@ async function editWorker(id) {
                     id="modalWorkerWage"
                     type="number"
                     min="0"
-                    value="${worker.wage}"
+                    value="${safeNumber(
+                        worker.wage
+                    )}"
                     required>
             </label>
 
@@ -1638,29 +2755,55 @@ async function editWorker(id) {
 
         async () => {
 
-            worker.name =
+            const name =
                 $("#modalWorkerName")
-                .value.trim();
+                    .value
+                    .trim();
+
+
+            if (!name) {
+
+                showToast(
+                    "Enter a worker name."
+                );
+
+                return;
+
+            }
+
+
+            worker.name =
+                name;
+
 
             worker.wage =
-                Number(
-                    $("#modalWorkerWage")
-                    .value
-                ) || 0;
+                Math.max(
+                    0,
+                    safeNumber(
+                        $("#modalWorkerWage")
+                            .value
+                    )
+                );
+
 
             await put(
                 "workers",
                 worker
             );
 
+
             await audit(
                 "EDIT_WORKER",
                 worker
             );
 
+
             await refresh();
 
-            showToast("Worker updated.");
+
+            showToast(
+                "Worker updated."
+            );
 
         }
 
@@ -1669,7 +2812,8 @@ async function editWorker(id) {
 }
 
 
-window.editWorker = editWorker;
+window.editWorker =
+    editWorker;
 
 
 async function toggleWorker(id) {
@@ -1678,6 +2822,7 @@ async function toggleWorker(id) {
         state.workers.find(
             w => w.id === id
         );
+
 
     if (!worker) return;
 
@@ -1691,39 +2836,81 @@ async function toggleWorker(id) {
         worker
     );
 
+
+    await audit(
+        "TOGGLE_WORKER",
+        {
+            id,
+            active: worker.active
+        }
+    );
+
+
     await refresh();
 
 }
 
 
-window.toggleWorker = toggleWorker;
+window.toggleWorker =
+    toggleWorker;
 
 
 async function removeWorker(id) {
 
     if (
         !confirm(
-            "Remove this worker?"
+            "Remove this worker from the active worker list? Existing order history will remain."
         )
-    ) return;
+    ) {
+        return;
+    }
 
 
-    await remove(
+    /*
+       We disable rather than physically delete
+       the worker so historical records remain
+       intact.
+    */
+
+    const worker =
+        state.workers.find(
+            w => w.id === id
+        );
+
+
+    if (!worker) return;
+
+
+    worker.active = false;
+
+
+    await put(
         "workers",
-        id
+        worker
     );
+
 
     await audit(
         "REMOVE_WORKER",
-        {id}
+        {
+            id,
+            name: worker.name
+        }
     );
 
+
     await refresh();
+
+
+    showToast(
+        "Worker removed from active list."
+    );
 
 }
 
 
-window.removeWorker = removeWorker;
+window.removeWorker =
+    removeWorker;
 
 
 /* =========================================================
@@ -1732,24 +2919,35 @@ window.removeWorker = removeWorker;
 
 function renderPackages() {
 
+    if (!$("#packagesGrid")) {
+        return;
+    }
+
+
     $("#packagesGrid").innerHTML =
-        state.packages.map(packageItem => `
+        state.packages
+            .map(
+                packageItem => `
 
         <div class="package-card">
 
             <h3>
-                ${escapeHTML(packageItem.name)}
+                ${escapeHTML(
+                    packageItem.name
+                )}
             </h3>
 
             <div class="big-price">
-                ${money(packageItem.price)}
+                ${money(
+                    packageItem.price
+                )}
             </div>
 
             <div class="muted">
                 ${
                     packageItem.active === false
-                    ? "Disabled"
-                    : "Available"
+                        ? "Disabled"
+                        : "Available"
                 }
             </div>
 
@@ -1766,8 +2964,8 @@ function renderPackages() {
                     onclick="togglePackage('${packageItem.id}')">
                     ${
                         packageItem.active === false
-                        ? "Enable"
-                        : "Disable"
+                            ? "Enable"
+                            : "Disable"
                     }
                 </button>
 
@@ -1781,81 +2979,112 @@ function renderPackages() {
 
         </div>
 
-        `).join("");
+        `
+            )
+            .join("");
 
 }
 
 
-$("#addPackage").onclick = () => {
+if ($("#addPackage")) {
 
-    openModal(
+    $("#addPackage").onclick = () => {
 
-        "Add Package",
+        openModal(
 
-        `
-        <form id="packageForm" class="stack">
+            "Add Package",
 
-            <label>
-                Package Name
-                <input id="modalPackageName" required>
-            </label>
+            `
+            <form id="packageForm" class="stack">
 
-            <label>
-                Price
-                <input
-                    id="modalPackagePrice"
-                    type="number"
-                    min="0"
-                    value="5000"
-                    required>
-            </label>
+                <label>
+                    Package Name
+                    <input
+                        id="modalPackageName"
+                        required>
+                </label>
 
-            <button class="gold-button">
-                Save Package
-            </button>
+                <label>
+                    Price
+                    <input
+                        id="modalPackagePrice"
+                        type="number"
+                        min="0"
+                        value="5000"
+                        required>
+                </label>
 
-        </form>
-        `,
+                <button class="gold-button">
+                    Save Package
+                </button>
 
-        async () => {
+            </form>
+            `,
 
-            const item = {
+            async () => {
 
-                id: uid(),
-
-                name:
+                const name =
                     $("#modalPackageName")
-                    .value.trim(),
-
-                price:
-                    Number(
-                        $("#modalPackagePrice")
                         .value
-                    ) || 0,
+                        .trim();
 
-                active: true
 
-            };
+                if (!name) {
 
-            await put(
-                "packages",
-                item
-            );
+                    showToast(
+                        "Enter a package name."
+                    );
 
-            await audit(
-                "ADD_PACKAGE",
-                item
-            );
+                    return;
 
-            await refresh();
+                }
 
-            showToast("Package added.");
 
-        }
+                const item = {
 
-    );
+                    id: uid(),
 
-};
+                    name,
+
+                    price:
+                        Math.max(
+                            0,
+                            safeNumber(
+                                $("#modalPackagePrice")
+                                    .value
+                            )
+                        ),
+
+                    active: true
+
+                };
+
+
+                await put(
+                    "packages",
+                    item
+                );
+
+
+                await audit(
+                    "ADD_PACKAGE",
+                    item
+                );
+
+
+                await refresh();
+
+
+                showToast(
+                    "Package added."
+                );
+
+            }
+        );
+
+    };
+
+}
 
 
 async function editPackage(id) {
@@ -1864,6 +3093,7 @@ async function editPackage(id) {
         state.packages.find(
             p => p.id === id
         );
+
 
     if (!item) return;
 
@@ -1879,7 +3109,9 @@ async function editPackage(id) {
                 Package Name
                 <input
                     id="modalPackageName"
-                    value="${escapeHTML(item.name)}"
+                    value="${escapeHTML(
+                        item.name
+                    )}"
                     required>
             </label>
 
@@ -1889,7 +3121,9 @@ async function editPackage(id) {
                     id="modalPackagePrice"
                     type="number"
                     min="0"
-                    value="${item.price}"
+                    value="${safeNumber(
+                        item.price
+                    )}"
                     required>
             </label>
 
@@ -1902,29 +3136,55 @@ async function editPackage(id) {
 
         async () => {
 
-            item.name =
+            const name =
                 $("#modalPackageName")
-                .value.trim();
+                    .value
+                    .trim();
+
+
+            if (!name) {
+
+                showToast(
+                    "Enter a package name."
+                );
+
+                return;
+
+            }
+
+
+            item.name =
+                name;
+
 
             item.price =
-                Number(
-                    $("#modalPackagePrice")
-                    .value
-                ) || 0;
+                Math.max(
+                    0,
+                    safeNumber(
+                        $("#modalPackagePrice")
+                            .value
+                    )
+                );
+
 
             await put(
                 "packages",
                 item
             );
 
+
             await audit(
                 "EDIT_PACKAGE",
                 item
             );
 
+
             await refresh();
 
-            showToast("Package updated.");
+
+            showToast(
+                "Package updated."
+            );
 
         }
 
@@ -1933,7 +3193,8 @@ async function editPackage(id) {
 }
 
 
-window.editPackage = editPackage;
+window.editPackage =
+    editPackage;
 
 
 async function togglePackage(id) {
@@ -1943,47 +3204,93 @@ async function togglePackage(id) {
             p => p.id === id
         );
 
+
+    if (!item) return;
+
+
     item.active =
         item.active === false;
+
 
     await put(
         "packages",
         item
     );
 
+
+    await audit(
+        "TOGGLE_PACKAGE",
+        {
+            id,
+            active: item.active
+        }
+    );
+
+
     await refresh();
 
 }
 
 
-window.togglePackage = togglePackage;
+window.togglePackage =
+    togglePackage;
 
 
 async function removePackage(id) {
 
     if (
         !confirm(
-            "Delete this package?"
+            "Delete this package from the active list? Existing orders will remain."
         )
-    ) return;
+    ) {
+        return;
+    }
 
 
-    await remove(
+    const item =
+        state.packages.find(
+            p => p.id === id
+        );
+
+
+    if (!item) return;
+
+
+    /*
+       Disable rather than physically delete
+       so historical package information remains.
+    */
+
+    item.active = false;
+
+
+    await put(
         "packages",
-        id
+        item
     );
+
 
     await audit(
         "DELETE_PACKAGE",
-        {id}
+        {
+            id,
+            name: item.name
+        }
     );
 
+
     await refresh();
+
+
+    showToast(
+        "Package removed from active list."
+    );
 
 }
 
 
-window.removePackage = removePackage;
+window.removePackage =
+    removePackage;
 
 
 /* =========================================================
@@ -1992,10 +3299,19 @@ window.removePackage = removePackage;
 
 function renderExpenses() {
 
+    if (!$("#expensesTable")) {
+        return;
+    }
+
+
     const expenses =
         [...state.expenses]
-            .sort((a,b) =>
-                b.createdAt.localeCompare(a.createdAt)
+            .sort(
+                (a,b) =>
+                    b.createdAt
+                    .localeCompare(
+                        a.createdAt
+                    )
             );
 
 
@@ -2008,19 +3324,27 @@ function renderExpenses() {
         <tr>
 
             <td>
-                ${localDateTime(expense.createdAt)}
+                ${localDateTime(
+                    expense.createdAt
+                )}
             </td>
 
             <td>
-                ${escapeHTML(expense.description)}
+                ${escapeHTML(
+                    expense.description
+                )}
             </td>
 
             <td>
-                ${escapeHTML(expense.category)}
+                ${escapeHTML(
+                    expense.category
+                )}
             </td>
 
             <td class="money">
-                ${money(expense.amount)}
+                ${money(
+                    expense.amount
+                )}
             </td>
 
             <td>
@@ -2048,87 +3372,142 @@ function renderExpenses() {
 }
 
 
-$("#addExpense").onclick = () => {
+if ($("#addExpense")) {
 
-    openModal(
+    $("#addExpense").onclick = () => {
 
-        "Add Expense",
+        openModal(
 
-        `
-        <form id="expenseForm" class="stack">
+            "Add Expense",
 
-            <label>
-                Description
-                <input id="modalExpenseDescription" required>
-            </label>
+            `
+            <form id="expenseForm" class="stack">
 
-            <label>
-                Category
-                <input
-                    id="modalExpenseCategory"
-                    value="General">
-            </label>
+                <label>
+                    Description
+                    <input
+                        id="modalExpenseDescription"
+                        required>
+                </label>
 
-            <label>
-                Amount
-                <input
-                    id="modalExpenseAmount"
-                    type="number"
-                    min="0"
-                    required>
-            </label>
+                <label>
+                    Category
+                    <input
+                        id="modalExpenseCategory"
+                        value="General">
+                </label>
 
-            <button class="gold-button">
-                Save Expense
-            </button>
+                <label>
+                    Amount
+                    <input
+                        id="modalExpenseAmount"
+                        type="number"
+                        min="0"
+                        required>
+                </label>
 
-        </form>
-        `,
+                <button class="gold-button">
+                    Save Expense
+                </button>
 
-        async () => {
+            </form>
+            `,
 
-            const expense = {
+            async () => {
 
-                id: uid(),
-
-                createdAt:
-                    new Date().toISOString(),
-
-                description:
+                const description =
                     $("#modalExpenseDescription")
-                    .value.trim(),
-
-                category:
-                    $("#modalExpenseCategory")
-                    .value.trim(),
-
-                amount:
-                    Number(
-                        $("#modalExpenseAmount")
                         .value
-                    ) || 0
+                        .trim();
 
-            };
 
-            await put(
-                "expenses",
-                expense
-            );
+                const amount =
+                    Math.max(
+                        0,
+                        safeNumber(
+                            $("#modalExpenseAmount")
+                                .value
+                        )
+                    );
 
-            await audit(
-                "ADD_EXPENSE",
-                expense
-            );
 
-            await refresh();
+                if (!description) {
 
-            showToast("Expense added.");
+                    showToast(
+                        "Enter an expense description."
+                    );
 
-        }
+                    return;
 
-    );
+                }
 
-};
+
+                if (amount <= 0) {
+
+                    showToast(
+                        "Enter a valid expense amount."
+                    );
+
+                    return;
+
+                }
+
+
+                const expense = {
+
+                    id: uid(),
+
+                    createdAt:
+                        new Date()
+                            .toISOString(),
+
+                    description,
+
+                    category:
+                        $("#modalExpenseCategory")
+                            .value
+                            .trim() ||
+                        "General",
+
+                    amount,
+
+                    /*
+                       Existing UI remains the same.
+                       Expenses are treated as cash for
+                       daily cash reconciliation.
+                    */
+
+                    payment:
+                        "Cash"
+
+                };
+
+
+                await put(
+                    "expenses",
+                    expense
+                );
+
+
+                await audit(
+                    "ADD_EXPENSE",
+                    expense
+                );
+
+
+                await refresh();
+
+
+                showToast(
+                    "Expense added."
+                );
+
+            }
+        );
+
+    };
+
+}
 
 
 async function deleteExpense(id) {
@@ -2137,7 +3516,15 @@ async function deleteExpense(id) {
         !confirm(
             "Delete this expense?"
         )
-    ) return;
+    ) {
+        return;
+    }
+
+
+    const expense =
+        state.expenses.find(
+            e => e.id === id
+        );
 
 
     await remove(
@@ -2145,17 +3532,25 @@ async function deleteExpense(id) {
         id
     );
 
+
     await audit(
         "DELETE_EXPENSE",
-        {id}
+        expense || {id}
     );
 
+
     await refresh();
+
+
+    showToast(
+        "Expense deleted."
+    );
 
 }
 
 
-window.deleteExpense = deleteExpense;
+window.deleteExpense =
+    deleteExpense;
 
 
 /* =========================================================
@@ -2164,11 +3559,36 @@ window.deleteExpense = deleteExpense;
 
 function renderReports() {
 
+    if (
+        !$("#reportContent") ||
+        !$("#reportFrom") ||
+        !$("#reportTo")
+    ) {
+        return;
+    }
+
+
     const from =
-        $("#reportFrom").value || today();
+        $("#reportFrom").value ||
+        today();
+
 
     const to =
-        $("#reportTo").value || today();
+        $("#reportTo").value ||
+        today();
+
+
+    if (!isValidDateRange(from, to)) {
+
+        $("#reportContent").innerHTML = `
+            <div class="empty">
+                Choose a valid date range.
+            </div>
+        `;
+
+        return;
+
+    }
 
 
     const data =
@@ -2183,36 +3603,55 @@ function renderReports() {
 
             const orders =
                 data.orders.filter(
-                    o => o.workerId === worker.id
+                    o =>
+                        o.workerId ===
+                        worker.id
                 );
+
 
             const wages =
                 orders.reduce(
                     (sum,o) =>
                         sum +
-                        Number(o.workerWage || 0),
+                        safeNumber(
+                            o.workerWage
+                        ),
                     0
                 );
+
 
             const tips =
                 orders.reduce(
                     (sum,o) =>
                         sum +
-                        Number(o.tip || 0),
+                        safeNumber(
+                            o.tip
+                        ),
                     0
                 );
+
 
             return `
 
             <tr>
 
-                <td>${escapeHTML(worker.name)}</td>
+                <td>
+                    ${escapeHTML(
+                        worker.name
+                    )}
+                </td>
 
-                <td>${orders.length}</td>
+                <td>
+                    ${orders.length}
+                </td>
 
-                <td>${money(wages)}</td>
+                <td>
+                    ${money(wages)}
+                </td>
 
-                <td>${money(tips)}</td>
+                <td>
+                    ${money(tips)}
+                </td>
 
             </tr>
 
@@ -2227,26 +3666,36 @@ function renderReports() {
     data.orders.forEach(order => {
 
         const d =
-            localDate(order.createdAt);
+            localDate(
+                order.createdAt
+            );
+
 
         if (!days[d]) {
 
             days[d] = {
-                cars:0,
-                revenue:0,
-                wages:0,
-                expenses:0
+
+                cars: 0,
+                revenue: 0,
+                wages: 0,
+                expenses: 0
+
             };
 
         }
 
+
         days[d].cars++;
 
         days[d].revenue +=
-            Number(order.finalPrice || 0);
+            safeNumber(
+                order.finalPrice
+            );
 
         days[d].wages +=
-            Number(order.workerWage || 0);
+            safeNumber(
+                order.workerWage
+            );
 
     });
 
@@ -2254,21 +3703,29 @@ function renderReports() {
     data.expenses.forEach(expense => {
 
         const d =
-            localDate(expense.createdAt);
+            localDate(
+                expense.createdAt
+            );
+
 
         if (!days[d]) {
 
             days[d] = {
-                cars:0,
-                revenue:0,
-                wages:0,
-                expenses:0
+
+                cars: 0,
+                revenue: 0,
+                wages: 0,
+                expenses: 0
+
             };
 
         }
 
+
         days[d].expenses +=
-            Number(expense.amount || 0);
+            safeNumber(
+                expense.amount
+            );
 
     });
 
@@ -2278,12 +3735,15 @@ function renderReports() {
             .sort()
             .map(date => {
 
-                const d = days[date];
+                const d =
+                    days[date];
+
 
                 const net =
                     d.revenue -
                     d.expenses -
                     d.wages;
+
 
                 return `
 
@@ -2294,15 +3754,21 @@ function renderReports() {
                     <td>${d.cars}</td>
 
                     <td class="money">
-                        ${money(d.revenue)}
+                        ${money(
+                            d.revenue
+                        )}
                     </td>
 
                     <td>
-                        ${money(d.expenses)}
+                        ${money(
+                            d.expenses
+                        )}
                     </td>
 
                     <td>
-                        ${money(d.wages)}
+                        ${money(
+                            d.wages
+                        )}
                     </td>
 
                     <td class="money">
@@ -2327,44 +3793,61 @@ function renderReports() {
 
             <div class="summary-item">
                 <small>Revenue</small>
-                <strong>${money(data.revenue)}</strong>
+                <strong>
+                    ${money(
+                        data.revenue
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Cars</small>
-                <strong>${data.cars}</strong>
+                <strong>
+                    ${data.cars}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Expenses</small>
-                <strong>${money(data.expenseTotal)}</strong>
+                <strong>
+                    ${money(
+                        data.expenseTotal
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Worker Wages</small>
-                <strong>${money(data.wages)}</strong>
+                <strong>
+                    ${money(
+                        data.wages
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Net Profit</small>
-                <strong>${money(data.profit)}</strong>
+                <strong>
+                    ${money(
+                        data.profit
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Average / Car</small>
-                <strong>${money(data.average)}</strong>
+                <strong>
+                    ${money(
+                        data.average
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Discounts</small>
                 <strong>
                     ${money(
-                        data.orders.reduce(
-                            (a,o) =>
-                                a +
-                                Number(o.discount || 0),
-                            0
-                        )
+                        data.discounts
                     )}
                 </strong>
             </div>
@@ -2372,9 +3855,16 @@ function renderReports() {
             <div class="summary-item">
                 <small>Free Washes</small>
                 <strong>
-                    ${data.orders.filter(
-                        o => o.freeWash
-                    ).length}
+                    ${data.freeWashes}
+                </strong>
+            </div>
+
+            <div class="summary-item">
+                <small>Refunds</small>
+                <strong>
+                    ${money(
+                        data.refundTotal
+                    )}
                 </strong>
             </div>
 
@@ -2388,16 +3878,22 @@ function renderReports() {
         <table>
 
         <thead>
+
         <tr>
+
         <th>Worker</th>
         <th>Cars</th>
         <th>Wages</th>
         <th>Tips</th>
+
         </tr>
+
         </thead>
 
         <tbody>
+
         ${workerRows}
+
         </tbody>
 
         </table>
@@ -2412,24 +3908,33 @@ function renderReports() {
         <table>
 
         <thead>
+
         <tr>
+
         <th>Date</th>
         <th>Cars</th>
         <th>Revenue</th>
         <th>Expenses</th>
         <th>Wages</th>
         <th>Net</th>
+
         </tr>
+
         </thead>
 
         <tbody>
-        ${dailyRows || `
+
+        ${
+            dailyRows ||
+            `
             <tr>
                 <td colspan="6" class="empty">
                     No activity.
                 </td>
             </tr>
-        `}
+            `
+        }
+
         </tbody>
 
         </table>
@@ -2441,33 +3946,50 @@ function renderReports() {
 }
 
 
-$("#reportFrom").value = today();
-$("#reportTo").value = today();
+if ($("#reportFrom")) {
+    $("#reportFrom").value = today();
+}
 
-$("#runReport").onclick =
-    renderReports;
+if ($("#reportTo")) {
+    $("#reportTo").value = today();
+}
+
+if ($("#runReport")) {
+
+    $("#runReport").onclick =
+        renderReports;
+
+}
 
 
 /* =========================================================
-   EXPORT CENTER
+   EXPORT PERIODS
    ========================================================= */
 
 function getExportPeriod(type) {
 
-    const now = new Date();
+    const now =
+        new Date();
+
 
     const y =
         now.getFullYear();
 
+
     const m =
         now.getMonth();
+
 
     if (type === "today") {
 
         return {
+
             from: today(),
+
             to: today(),
+
             label: "Today"
+
         };
 
     }
@@ -2478,24 +4000,41 @@ function getExportPeriod(type) {
         const start =
             new Date(now);
 
+
         const day =
-            (start.getDay() + 6) % 7;
+            (
+                start.getDay() +
+                6
+            ) % 7;
+
 
         start.setDate(
-            start.getDate() - day
+            start.getDate() -
+            day
         );
+
 
         const end =
             new Date(start);
 
+
         end.setDate(
-            start.getDate() + 6
+            start.getDate() +
+            6
         );
 
+
         return {
-            from: localDate(start),
-            to: localDate(end),
-            label: "This Week"
+
+            from:
+                localDate(start),
+
+            to:
+                localDate(end),
+
+            label:
+                "This Week"
+
         };
 
     }
@@ -2506,14 +4045,24 @@ function getExportPeriod(type) {
         return {
 
             from:
-                `${y}-${String(m+1).padStart(2,"0")}-01`,
+                `${y}-${String(
+                    m + 1
+                ).padStart(
+                    2,
+                    "0"
+                )}-01`,
 
             to:
                 localDate(
-                    new Date(y,m+1,0)
+                    new Date(
+                        y,
+                        m + 1,
+                        0
+                    )
                 ),
 
-            label:"This Month"
+            label:
+                "This Month"
 
         };
 
@@ -2523,9 +4072,16 @@ function getExportPeriod(type) {
     if (type === "year") {
 
         return {
-            from:`${y}-01-01`,
-            to:`${y}-12-31`,
-            label:"This Year"
+
+            from:
+                `${y}-01-01`,
+
+            to:
+                `${y}-12-31`,
+
+            label:
+                "This Year"
+
         };
 
     }
@@ -2536,24 +4092,42 @@ function getExportPeriod(type) {
         const start =
             new Date(now);
 
+
         const day =
-            (start.getDay() + 6) % 7;
+            (
+                start.getDay() +
+                6
+            ) % 7;
+
 
         start.setDate(
-            start.getDate() - day - 7
+            start.getDate() -
+            day -
+            7
         );
+
 
         const end =
             new Date(start);
 
+
         end.setDate(
-            start.getDate() + 6
+            start.getDate() +
+            6
         );
 
+
         return {
-            from:localDate(start),
-            to:localDate(end),
-            label:"Previous Week"
+
+            from:
+                localDate(start),
+
+            to:
+                localDate(end),
+
+            label:
+                "Previous Week"
+
         };
 
     }
@@ -2562,17 +4136,28 @@ function getExportPeriod(type) {
     if (type === "previousMonth") {
 
         return {
+
             from:
                 localDate(
-                    new Date(y,m-1,1)
+                    new Date(
+                        y,
+                        m - 1,
+                        1
+                    )
                 ),
 
             to:
                 localDate(
-                    new Date(y,m,0)
+                    new Date(
+                        y,
+                        m,
+                        0
+                    )
                 ),
 
-            label:"Previous Month"
+            label:
+                "Previous Month"
+
         };
 
     }
@@ -2581,12 +4166,22 @@ function getExportPeriod(type) {
     if (type === "previousYear") {
 
         return {
-            from:`${y-1}-01-01`,
-            to:`${y-1}-12-31`,
-            label:"Previous Year"
+
+            from:
+                `${y - 1}-01-01`,
+
+            to:
+                `${y - 1}-12-31`,
+
+            label:
+                "Previous Year"
+
         };
 
     }
+
+
+    return null;
 
 }
 
@@ -2601,28 +4196,66 @@ $$("[data-export]").forEach(button => {
 
         if (type === "custom") {
 
-            $("#customExport")
-                .classList.remove("hidden");
+            if ($("#customExport")) {
+
+                $("#customExport")
+                    .classList
+                    .remove("hidden");
+
+            }
+
+            $$("[data-export]")
+                .forEach(
+                    b =>
+                        b.classList
+                            .remove("active")
+                );
+
+
+            button.classList.add(
+                "active"
+            );
+
 
             return;
 
         }
 
 
-        $("#customExport")
-            .classList.add("hidden");
+        if ($("#customExport")) {
+
+            $("#customExport")
+                .classList
+                .add("hidden");
+
+        }
+
+
+        const period =
+            getExportPeriod(
+                type
+            );
+
+
+        if (!period) return;
 
 
         exportPeriod =
-            getExportPeriod(type);
+            period;
 
 
         $$("[data-export]")
-            .forEach(b =>
-                b.classList.remove("active")
+            .forEach(
+                b =>
+                    b.classList
+                        .remove("active")
             );
 
-        button.classList.add("active");
+
+        button.classList.add(
+            "active"
+        );
+
 
         renderExportPreview();
 
@@ -2631,37 +4264,64 @@ $$("[data-export]").forEach(button => {
 });
 
 
-$("#exportFrom").onchange = () => {
+function updateCustomExport() {
+
+    const from =
+        $("#exportFrom")?.value || "";
+
+
+    const to =
+        $("#exportTo")?.value || "";
+
 
     exportPeriod = {
 
-        from:
-            $("#exportFrom").value,
+        from,
 
-        to:
-            $("#exportTo").value,
+        to,
 
         label:
             "Custom Range"
 
     };
 
+
     renderExportPreview();
 
-};
+}
 
 
-$("#exportTo").onchange =
-    $("#exportFrom").onchange;
+if ($("#exportFrom")) {
+
+    $("#exportFrom").onchange =
+        updateCustomExport;
+
+}
+
+
+if ($("#exportTo")) {
+
+    $("#exportTo").onchange =
+        updateCustomExport;
+
+}
 
 
 exportPeriod =
-    getExportPeriod("today");
+    getExportPeriod(
+        "today"
+    );
 
 
 function renderExportPreview() {
 
-    if (!exportPeriod.from) return;
+    if (
+        !exportPeriod.from ||
+        !exportPeriod.to ||
+        !$("#exportPreview")
+    ) {
+        return;
+    }
 
 
     const data =
@@ -2677,22 +4337,54 @@ function renderExportPreview() {
 
             <div class="summary-item">
                 <small>Period</small>
-                <strong>${exportPeriod.label}</strong>
+                <strong>
+                    ${escapeHTML(
+                        exportPeriod.label
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Cars</small>
-                <strong>${data.cars}</strong>
+                <strong>
+                    ${data.cars}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Revenue</small>
-                <strong>${money(data.revenue)}</strong>
+                <strong>
+                    ${money(
+                        data.revenue
+                    )}
+                </strong>
+            </div>
+
+            <div class="summary-item">
+                <small>Refunds</small>
+                <strong>
+                    ${money(
+                        data.refundTotal
+                    )}
+                </strong>
+            </div>
+
+            <div class="summary-item">
+                <small>Expenses</small>
+                <strong>
+                    ${money(
+                        data.expenseTotal
+                    )}
+                </strong>
             </div>
 
             <div class="summary-item">
                 <small>Net Profit</small>
-                <strong>${money(data.profit)}</strong>
+                <strong>
+                    ${money(
+                        data.profit
+                    )}
+                </strong>
             </div>
 
         </div>
@@ -2703,50 +4395,68 @@ function renderExportPreview() {
 
 
 /* =========================================================
-   SIMPLE XLSX GENERATOR
+   XLSX HELPERS
    ========================================================= */
 
-const CRC_TABLE = (() => {
+const CRC_TABLE =
+    (() => {
 
-    const table = [];
+        const table = [];
 
-    for (let n = 0; n < 256; n++) {
+        for (
+            let n = 0;
+            n < 256;
+            n++
+        ) {
 
-        let c = n;
+            let c = n;
 
-        for (let k = 0; k < 8; k++) {
+            for (
+                let k = 0;
+                k < 8;
+                k++
+            ) {
 
-            c =
-                c & 1
-                    ? 0xedb88320 ^ (c >>> 1)
-                    : c >>> 1;
+                c =
+                    c & 1
+                        ? 0xedb88320 ^
+                          (c >>> 1)
+                        : c >>> 1;
+
+            }
+
+            table[n] =
+                c >>> 0;
 
         }
 
-        table[n] = c >>> 0;
+        return table;
 
-    }
-
-    return table;
-
-})();
+    })();
 
 
 function crc32(bytes) {
 
-    let crc = 0xffffffff;
+    let crc =
+        0xffffffff;
+
 
     for (const byte of bytes) {
 
         crc =
             CRC_TABLE[
-                (crc ^ byte) & 255
+                (crc ^ byte) &
+                255
             ] ^
             (crc >>> 8);
 
     }
 
-    return (crc ^ 0xffffffff) >>> 0;
+
+    return (
+        crc ^
+        0xffffffff
+    ) >>> 0;
 
 }
 
@@ -2754,8 +4464,11 @@ function crc32(bytes) {
 function u16(n) {
 
     return new Uint8Array([
+
         n & 255,
+
         (n >>> 8) & 255
+
     ]);
 
 }
@@ -2764,10 +4477,15 @@ function u16(n) {
 function u32(n) {
 
     return new Uint8Array([
+
         n & 255,
+
         (n >>> 8) & 255,
+
         (n >>> 16) & 255,
+
         (n >>> 24) & 255
+
     ]);
 
 }
@@ -2777,14 +4495,19 @@ function concatBytes(...arrays) {
 
     const total =
         arrays.reduce(
-            (sum,a) => sum + a.length,
+            (sum,a) =>
+                sum +
+                a.length,
             0
         );
+
 
     const output =
         new Uint8Array(total);
 
+
     let offset = 0;
+
 
     arrays.forEach(array => {
 
@@ -2793,9 +4516,11 @@ function concatBytes(...arrays) {
             offset
         );
 
-        offset += array.length;
+        offset +=
+            array.length;
 
     });
+
 
     return output;
 
@@ -2817,10 +4542,16 @@ function makeZip(files) {
     for (const file of files) {
 
         const name =
-            encoder.encode(file.name);
+            encoder.encode(
+                file.name
+            );
+
 
         const data =
-            encoder.encode(file.data);
+            encoder.encode(
+                file.data
+            );
+
 
         const crc =
             crc32(data);
@@ -2829,7 +4560,9 @@ function makeZip(files) {
         const local =
             concatBytes(
 
-                u32(0x04034b50),
+                u32(
+                    0x04034b50
+                ),
 
                 u16(20),
                 u16(0),
@@ -2851,13 +4584,17 @@ function makeZip(files) {
             );
 
 
-        localParts.push(local);
+        localParts.push(
+            local
+        );
 
 
         const central =
             concatBytes(
 
-                u32(0x02014b50),
+                u32(
+                    0x02014b50
+                ),
 
                 u16(20),
                 u16(20),
@@ -2887,24 +4624,35 @@ function makeZip(files) {
             );
 
 
-        centralParts.push(central);
+        centralParts.push(
+            central
+        );
 
-        offset += local.length;
+
+        offset +=
+            local.length;
 
     }
 
 
     const locals =
-        concatBytes(...localParts);
+        concatBytes(
+            ...localParts
+        );
+
 
     const central =
-        concatBytes(...centralParts);
+        concatBytes(
+            ...centralParts
+        );
 
 
     const end =
         concatBytes(
 
-            u32(0x06054b50),
+            u32(
+                0x06054b50
+            ),
 
             u16(0),
             u16(0),
@@ -2939,12 +4687,65 @@ function makeZip(files) {
 
 function xmlEscape(value) {
 
-    return String(value ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&apos;");
+    return String(
+        value ?? ""
+    )
+    .replaceAll(
+        "&",
+        "&amp;"
+    )
+    .replaceAll(
+        "<",
+        "&lt;"
+    )
+    .replaceAll(
+        ">",
+        "&gt;"
+    )
+    .replaceAll(
+        '"',
+        "&quot;"
+    )
+    .replaceAll(
+        "'",
+        "&apos;"
+    );
+
+}
+
+
+/*
+   Proper Excel column letters:
+   A ... Z, AA ... AZ, BA ...
+*/
+
+function excelColumn(index) {
+
+    let result = "";
+
+    let n =
+        Number(index);
+
+
+    while (n >= 0) {
+
+        result =
+            String.fromCharCode(
+                (n % 26) + 65
+            ) +
+            result;
+
+
+        n =
+            Math.floor(
+                n / 26
+            ) - 1;
+
+    }
+
+
+    return result;
+
 }
 
 
@@ -2956,50 +4757,59 @@ function worksheetXML(rows) {
         `<sheetData>`;
 
 
-    rows.forEach((row,rowIndex) => {
+    rows.forEach(
+        (row,rowIndex) => {
 
-        xml +=
-            `<row r="${rowIndex+1}">`;
-
-
-        row.forEach((value,columnIndex) => {
-
-            const column =
-                String.fromCharCode(
-                    65 + columnIndex
-                );
-
-            const reference =
-                `${column}${rowIndex+1}`;
+            xml +=
+                `<row r="${rowIndex + 1}">`;
 
 
-            if (
-                typeof value === "number" &&
-                Number.isFinite(value)
-            ) {
+            row.forEach(
+                (value,columnIndex) => {
 
-                xml +=
-                    `<c r="${reference}">` +
-                    `<v>${value}</v>` +
-                    `</c>`;
-
-            } else {
-
-                xml +=
-                    `<c r="${reference}" t="inlineStr">` +
-                    `<is><t xml:space="preserve">` +
-                    xmlEscape(value) +
-                    `</t></is>` +
-                    `</c>`;
-
-            }
-
-        });
+                    const column =
+                        excelColumn(
+                            columnIndex
+                        );
 
 
-        xml += "</row>";
+                    const reference =
+                        `${column}${rowIndex + 1}`;
 
-    });
+
+                    if (
+                        typeof value ===
+                        "number" &&
+                        Number.isFinite(
+                            value
+                        )
+                    ) {
+
+                        xml +=
+                            `<c r="${reference}">` +
+                            `<v>${value}</v>` +
+                            `</c>`;
+
+                    } else {
+
+                        xml +=
+                            `<c r="${reference}" t="inlineStr">` +
+                            `<is><t xml:space="preserve">` +
+                            xmlEscape(value) +
+                            `</t></is>` +
+                            `</c>`;
+
+                    }
+
+                }
+            );
+
+
+            xml +=
+                "</row>";
+
+        }
+    );
 
 
     xml +=
@@ -3017,11 +4827,15 @@ function createWorkbook(sheets) {
         sheets.map(
             (sheet,index) =>
                 `<sheet name="${xmlEscape(
-                    sheet.name.substring(0,31)
+                    sheet.name.substring(
+                        0,
+                        31
+                    )
                 )}"
-                sheetId="${index+1}"
-                r:id="rId${index+1}"/>`
-        ).join("");
+                sheetId="${index + 1}"
+                r:id="rId${index + 1}"/>`
+        )
+        .join("");
 
 
     const files = [];
@@ -3048,7 +4862,7 @@ ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.m
 
 ${sheets.map(
     (_,i) =>
-        `<Override PartName="/xl/worksheets/sheet${i+1}.xml"
+        `<Override PartName="/xl/worksheets/sheet${i + 1}.xml"
         ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
 ).join("")}
 
@@ -3059,7 +4873,8 @@ ${sheets.map(
 
     files.push({
 
-        name:"_rels/.rels",
+        name:
+            "_rels/.rels",
 
         data:
 
@@ -3080,7 +4895,8 @@ Target="xl/workbook.xml"/>
 
     files.push({
 
-        name:"xl/workbook.xml",
+        name:
+            "xl/workbook.xml",
 
         data:
 
@@ -3101,7 +4917,8 @@ ${sheetLinks}
 
     files.push({
 
-        name:"xl/_rels/workbook.xml.rels",
+        name:
+            "xl/_rels/workbook.xml.rels",
 
         data:
 
@@ -3113,9 +4930,9 @@ xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 ${sheets.map(
     (_,i) =>
         `<Relationship
-        Id="rId${i+1}"
+        Id="rId${i + 1}"
         Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
-        Target="worksheets/sheet${i+1}.xml"/>`
+        Target="worksheets/sheet${i + 1}.xml"/>`
 ).join("")}
 
 </Relationships>`
@@ -3123,22 +4940,28 @@ ${sheets.map(
     });
 
 
-    sheets.forEach((sheet,index) => {
+    sheets.forEach(
+        (sheet,index) => {
 
-        files.push({
+            files.push({
 
-            name:
-                `xl/worksheets/sheet${index+1}.xml`,
+                name:
+                    `xl/worksheets/sheet${index + 1}.xml`,
 
-            data:
-                worksheetXML(sheet.rows)
+                data:
+                    worksheetXML(
+                        sheet.rows
+                    )
 
-        });
+            });
 
-    });
+        }
+    );
 
 
-    return makeZip(files);
+    return makeZip(
+        files
+    );
 
 }
 
@@ -3150,10 +4973,10 @@ ${sheets.map(
 function exportExcel() {
 
     if (
-        !exportPeriod.from ||
-        !exportPeriod.to ||
-        exportPeriod.from >
-        exportPeriod.to
+        !isValidDateRange(
+            exportPeriod.from,
+            exportPeriod.to
+        )
     ) {
 
         showToast(
@@ -3176,17 +4999,28 @@ function exportExcel() {
 
         ["AL NAJMA CAR WASH"],
 
-        ["Export Period", exportPeriod.label],
+        [
+            "Export Period",
+            exportPeriod.label
+        ],
 
-        ["From", exportPeriod.from],
+        [
+            "From",
+            exportPeriod.from
+        ],
 
-        ["To", exportPeriod.to],
+        [
+            "To",
+            exportPeriod.to
+        ],
 
         [],
 
         ["Metric","Value"],
 
         ["Revenue",data.revenue],
+
+        ["Refunds",data.refundTotal],
 
         ["Expenses",data.expenseTotal],
 
@@ -3196,23 +5030,24 @@ function exportExcel() {
 
         ["Cars Washed",data.cars],
 
-        ["Average Revenue / Car",data.average],
+        [
+            "Average Revenue / Car",
+            data.average
+        ],
 
         [
             "Discounts",
-            data.orders.reduce(
-                (a,o) =>
-                    a +
-                    Number(o.discount || 0),
-                0
-            )
+            data.discounts
         ],
 
         [
             "Free Washes",
-            data.orders.filter(
-                o => o.freeWash
-            ).length
+            data.freeWashes
+        ],
+
+        [
+            "Tips",
+            data.tips
         ]
 
     ];
@@ -3236,17 +5071,56 @@ function exportExcel() {
             "Tip",
             "Status",
             "Loyalty Free",
-            "Order ID"
+            "Order ID",
+            "Voided At",
+            "Refunded At"
         ]
 
     ];
 
 
-    data.orders.forEach(order => {
+    /*
+       Export all orders whose created date is
+       in the selected range, including unpaid,
+       voided and refunded records.
+
+       This is important because an export should
+       contain the complete operational history,
+       not only revenue-generating orders.
+    */
+
+    const exportOrders =
+        state.orders.filter(order => {
+
+            const date =
+                localDate(
+                    order.createdAt
+                );
+
+            return (
+                date >=
+                    exportPeriod.from &&
+                date <=
+                    exportPeriod.to
+            );
+
+        })
+        .sort(
+            (a,b) =>
+                a.createdAt
+                .localeCompare(
+                    b.createdAt
+                )
+        );
+
+
+    exportOrders.forEach(order => {
 
         orders.push([
 
-            localDateTime(order.createdAt),
+            localDateTime(
+                order.createdAt
+            ),
 
             order.plate,
 
@@ -3258,19 +5132,29 @@ function exportExcel() {
 
             order.packageName,
 
-            order.originalPrice,
+            safeNumber(
+                order.originalPrice
+            ),
 
-            order.discount,
+            safeNumber(
+                order.discount
+            ),
 
-            order.finalPrice,
+            safeNumber(
+                order.finalPrice
+            ),
 
             order.payment,
 
             order.workerName,
 
-            order.workerWage,
+            safeNumber(
+                order.workerWage
+            ),
 
-            order.tip,
+            safeNumber(
+                order.tip
+            ),
 
             order.status,
 
@@ -3278,7 +5162,19 @@ function exportExcel() {
                 ? "Yes"
                 : "No",
 
-            order.id
+            order.id,
+
+            order.voidedAt
+                ? localDateTime(
+                    order.voidedAt
+                )
+                : "",
+
+            order.refundedAt
+                ? localDateTime(
+                    order.refundedAt
+                )
+                : ""
 
         ]);
 
@@ -3301,27 +5197,32 @@ function exportExcel() {
 
     state.workers.forEach(worker => {
 
-        const orders =
+        const workerOrders =
             data.orders.filter(
                 o =>
-                    o.workerId === worker.id
+                    o.workerId ===
+                    worker.id
             );
 
 
         const wages =
-            orders.reduce(
+            workerOrders.reduce(
                 (a,o) =>
                     a +
-                    Number(o.workerWage || 0),
+                    safeNumber(
+                        o.workerWage
+                    ),
                 0
             );
 
 
         const tips =
-            orders.reduce(
+            workerOrders.reduce(
                 (a,o) =>
                     a +
-                    Number(o.tip || 0),
+                    safeNumber(
+                        o.tip
+                    ),
                 0
             );
 
@@ -3330,9 +5231,11 @@ function exportExcel() {
 
             worker.name,
 
-            orders.length,
+            workerOrders.length,
 
-            worker.wage,
+            safeNumber(
+                worker.wage
+            ),
 
             wages,
 
@@ -3364,9 +5267,13 @@ function exportExcel() {
 
 
     const threshold =
-        Number(
-            state.settings.loyaltyThreshold
-        ) || 4;
+        Math.max(
+            1,
+            safeNumber(
+                state.settings.loyaltyThreshold,
+                4
+            )
+        );
 
 
     state.customers.forEach(customer => {
@@ -3374,8 +5281,12 @@ function exportExcel() {
         const visits =
             data.orders.filter(
                 order =>
-                    order.plate.toLowerCase() ===
-                    customer.plate.toLowerCase()
+                    normalizePlate(
+                        order.plate
+                    ) ===
+                    normalizePlate(
+                        customer.plate
+                    )
             ).length;
 
 
@@ -3389,18 +5300,28 @@ function exportExcel() {
 
             customer.plate,
 
-            customer.visits,
+            safeNumber(
+                customer.visits
+            ),
 
-            customer.paidWashes,
+            safeNumber(
+                customer.paidWashes
+            ),
 
-            customer.totalSpent,
+            safeNumber(
+                customer.totalSpent
+            ),
 
             visits,
 
-            localDateTime(customer.lastVisit),
+            customer.lastVisit
+                ? localDateTime(
+                    customer.lastVisit
+                )
+                : "",
 
-            `${Number(
-                customer.paidWashes || 0
+            `${safeNumber(
+                customer.paidWashes
             ) % threshold} / ${threshold}`
 
         ]);
@@ -3415,6 +5336,7 @@ function exportExcel() {
             "Description",
             "Category",
             "Amount",
+            "Payment",
             "ID"
         ]
 
@@ -3425,13 +5347,20 @@ function exportExcel() {
 
         expenses.push([
 
-            localDateTime(expense.createdAt),
+            localDateTime(
+                expense.createdAt
+            ),
 
             expense.description,
 
             expense.category,
 
-            expense.amount,
+            safeNumber(
+                expense.amount
+            ),
+
+            expense.payment ||
+                "Cash",
 
             expense.id
 
@@ -3446,16 +5375,20 @@ function exportExcel() {
     data.orders.forEach(order => {
 
         const date =
-            localDate(order.createdAt);
+            localDate(
+                order.createdAt
+            );
 
 
         if (!dailyMap[date]) {
 
             dailyMap[date] = {
-                cars:0,
-                revenue:0,
-                wages:0,
-                expenses:0
+
+                cars: 0,
+                revenue: 0,
+                wages: 0,
+                expenses: 0
+
             };
 
         }
@@ -3464,10 +5397,14 @@ function exportExcel() {
         dailyMap[date].cars++;
 
         dailyMap[date].revenue +=
-            Number(order.finalPrice || 0);
+            safeNumber(
+                order.finalPrice
+            );
 
         dailyMap[date].wages +=
-            Number(order.workerWage || 0);
+            safeNumber(
+                order.workerWage
+            );
 
     });
 
@@ -3475,23 +5412,29 @@ function exportExcel() {
     data.expenses.forEach(expense => {
 
         const date =
-            localDate(expense.createdAt);
+            localDate(
+                expense.createdAt
+            );
 
 
         if (!dailyMap[date]) {
 
             dailyMap[date] = {
-                cars:0,
-                revenue:0,
-                wages:0,
-                expenses:0
+
+                cars: 0,
+                revenue: 0,
+                wages: 0,
+                expenses: 0
+
             };
 
         }
 
 
         dailyMap[date].expenses +=
-            Number(expense.amount || 0);
+            safeNumber(
+                expense.amount
+            );
 
     });
 
@@ -3543,51 +5486,91 @@ function exportExcel() {
         createWorkbook([
 
             {
-                name:"Summary",
-                rows:summary
+                name:
+                    "Summary",
+
+                rows:
+                    summary
             },
 
             {
-                name:"Orders",
-                rows:orders
+                name:
+                    "Orders",
+
+                rows:
+                    orders
             },
 
             {
-                name:"Workers",
-                rows:workers
+                name:
+                    "Workers",
+
+                rows:
+                    workers
             },
 
             {
-                name:"Customers",
-                rows:customers
+                name:
+                    "Customers",
+
+                rows:
+                    customers
             },
 
             {
-                name:"Expenses",
-                rows:expenses
+                name:
+                    "Expenses",
+
+                rows:
+                    expenses
             },
 
             {
-                name:"Daily Summary",
-                rows:daily
+                name:
+                    "Daily Summary",
+
+                rows:
+                    daily
             }
 
         ]);
 
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
-    link.href =
-        URL.createObjectURL(workbook);
+
+    const url =
+        URL.createObjectURL(
+            workbook
+        );
+
+
+    link.href = url;
+
 
     link.download =
         `Al-Najma-${exportPeriod.from}-to-${exportPeriod.to}.xlsx`;
 
+
+    document.body.appendChild(
+        link
+    );
+
+
     link.click();
 
+
+    link.remove();
+
+
     setTimeout(
-        () => URL.revokeObjectURL(link.href),
+        () =>
+            URL.revokeObjectURL(
+                url
+            ),
         2000
     );
 
@@ -3597,6 +5580,7 @@ function exportExcel() {
         exportPeriod
     );
 
+
     showToast(
         "Excel workbook exported."
     );
@@ -3604,8 +5588,12 @@ function exportExcel() {
 }
 
 
-$("#exportExcel").onclick =
-    exportExcel;
+if ($("#exportExcel")) {
+
+    $("#exportExcel").onclick =
+        exportExcel;
+
+}
 
 
 /* =========================================================
@@ -3618,6 +5606,7 @@ function printReceipt(id) {
         state.orders.find(
             o => o.id === id
         );
+
 
     if (!order) return;
 
@@ -3649,7 +5638,11 @@ function printReceipt(id) {
 
 <head>
 
-<title>Al Najma Receipt</title>
+<meta charset="UTF-8">
+
+<title>
+Al Najma Receipt
+</title>
 
 <style>
 
@@ -3657,6 +5650,7 @@ body{
 font-family:Arial,sans-serif;
 padding:25px;
 width:320px;
+margin:auto;
 }
 
 h1{
@@ -3671,6 +5665,7 @@ text-align:center;
 .row{
 display:flex;
 justify-content:space-between;
+gap:15px;
 margin:10px 0;
 }
 
@@ -3684,13 +5679,20 @@ border:0;
 border-top:1px solid #ddd;
 }
 
+.small{
+font-size:12px;
+color:#666;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>✦ AL NAJMA</h1>
+<h1>
+✦ AL NAJMA
+</h1>
 
 <p class="center">
 CAR WASH
@@ -3700,69 +5702,145 @@ CAR WASH
 
 <div class="row">
 <span>Date</span>
-<b>${escapeHTML(
-    localDateTime(order.createdAt)
-)}</b>
+<b>
+${escapeHTML(
+    localDateTime(
+        order.createdAt
+    )
+)}
+</b>
+</div>
+
+<div class="row">
+<span>Order</span>
+<b>
+${escapeHTML(
+    order.id
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Plate</span>
-<b>${escapeHTML(order.plate)}</b>
+<b>
+${escapeHTML(
+    order.plate
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Vehicle</span>
-<b>${escapeHTML(order.vehicle)}</b>
+<b>
+${escapeHTML(
+    order.vehicle
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Customer</span>
-<b>${escapeHTML(
-    order.customer || "—"
-)}</b>
+<b>
+${escapeHTML(
+    order.customer ||
+    "—"
+)}
+</b>
 </div>
 
 <hr>
 
 <div class="row">
 <span>Package</span>
-<b>${escapeHTML(
+<b>
+${escapeHTML(
     order.packageName
-)}</b>
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Original</span>
-<b>${money(
+<b>
+${money(
     order.originalPrice
-)}</b>
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Discount</span>
-<b>-${money(
+<b>
+-${money(
     order.discount
-)}</b>
+)}
+</b>
 </div>
 
 <div class="row total">
 <span>TOTAL</span>
-<b>${money(
+<b>
+${money(
     order.finalPrice
-)}</b>
+)}
+</b>
 </div>
 
 <div class="row">
 <span>Payment</span>
-<b>${escapeHTML(
+<b>
+${escapeHTML(
     order.payment
-)}</b>
+)}
+</b>
 </div>
+
+${
+    order.workerName
+    ? `
+    <div class="row">
+        <span>Worker</span>
+        <b>
+            ${escapeHTML(
+                order.workerName
+            )}
+        </b>
+    </div>
+    `
+    : ""
+}
+
+${
+    safeNumber(order.tip) > 0
+    ? `
+    <div class="row">
+        <span>Tip</span>
+        <b>
+            ${money(order.tip)}
+        </b>
+    </div>
+    `
+    : ""
+}
+
+${
+    order.freeWash
+    ? `
+    <p class="center">
+        <b>LOYALTY FREE WASH</b>
+    </p>
+    `
+    : ""
+}
 
 <hr>
 
 <p class="center">
 Thank you for choosing Al Najma ✦
+</p>
+
+<p class="center small">
+Al Najma Car Wash
 </p>
 
 <script>
@@ -3791,242 +5869,377 @@ window.printReceipt =
 
 function renderSettings() {
 
+    if (
+        !$("#businessName") ||
+        !$("#currency") ||
+        !$("#loyaltyThreshold") ||
+        !$("#defaultWage")
+    ) {
+        return;
+    }
+
+
     $("#businessName").value =
         state.settings.businessName ||
         "Al Najma Car Wash";
+
 
     $("#currency").value =
         state.settings.currency ||
         "IQD";
 
+
     $("#loyaltyThreshold").value =
         state.settings.loyaltyThreshold ||
         4;
+
 
     $("#defaultWage").value =
         state.settings.defaultWage ||
         2000;
 
 
-    $("#databaseInfo").textContent =
+    if ($("#databaseInfo")) {
 
-        `${state.orders.length} orders · ` +
-        `${state.customers.length} customers · ` +
-        `${state.workers.length} workers · ` +
-        `${state.expenses.length} expenses`;
+        $("#databaseInfo").textContent =
+
+            `${state.orders.length} orders · ` +
+            `${state.customers.length} customers · ` +
+            `${state.workers.length} workers · ` +
+            `${state.expenses.length} expenses`;
+
+    }
 
 }
 
 
-$("#settingsForm").onsubmit =
-    async event => {
+if ($("#settingsForm")) {
 
-        event.preventDefault();
+    $("#settingsForm").onsubmit =
+        async event => {
+
+            event.preventDefault();
 
 
-        state.settings = {
+            state.settings = {
 
-            id:"main",
+                id:
+                    "main",
 
-            businessName:
-                $("#businessName")
-                .value.trim() ||
-                "Al Najma Car Wash",
-
-            currency:
-                $("#currency")
-                .value.trim() ||
-                "IQD",
-
-            loyaltyThreshold:
-                Math.max(
-                    1,
-                    Number(
-                        $("#loyaltyThreshold")
+                businessName:
+                    $("#businessName")
                         .value
-                    ) || 4
-                ),
+                        .trim() ||
+                    "Al Najma Car Wash",
 
-            defaultWage:
-                Math.max(
-                    0,
-                    Number(
-                        $("#defaultWage")
+                currency:
+                    $("#currency")
                         .value
-                    ) || 2000
-                )
+                        .trim() ||
+                    "IQD",
+
+                loyaltyThreshold:
+                    Math.max(
+                        1,
+                        safeNumber(
+                            $("#loyaltyThreshold")
+                                .value,
+                            4
+                        )
+                    ),
+
+                defaultWage:
+                    Math.max(
+                        0,
+                        safeNumber(
+                            $("#defaultWage")
+                                .value,
+                            2000
+                        )
+                    )
+
+            };
+
+
+            await put(
+                "settings",
+                state.settings
+            );
+
+
+            /*
+               Changing the loyalty threshold
+               should immediately recalculate
+               displayed customer progress.
+            */
+
+            await audit(
+                "SAVE_SETTINGS",
+                state.settings
+            );
+
+
+            await refresh();
+
+
+            showToast(
+                "Settings saved."
+            );
 
         };
 
-
-        await put(
-            "settings",
-            state.settings
-        );
-
-
-        await audit(
-            "SAVE_SETTINGS",
-            state.settings
-        );
-
-
-        await refresh();
-
-        showToast(
-            "Settings saved."
-        );
-
-    };
+}
 
 
 /* =========================================================
    BACKUP / IMPORT
    ========================================================= */
 
-$("#backup").onclick =
-    async () => {
+if ($("#backup")) {
 
-        const backup = {
+    $("#backup").onclick =
+        async () => {
 
-            version:1,
+            const backup = {
 
-            exportedAt:
-                new Date().toISOString(),
+                version: 2,
 
-            stores:{}
+                exportedAt:
+                    new Date()
+                        .toISOString(),
 
-        };
+                stores: {}
 
-
-        for (const store of STORES) {
-
-            backup.stores[store] =
-                await getAll(store);
-
-        }
+            };
 
 
-        const blob =
-            new Blob(
-                [
-                    JSON.stringify(
-                        backup,
-                        null,
-                        2
-                    )
-                ],
-                {
-                    type:
-                    "application/json"
-                }
+            for (
+                const store
+                of STORES
+            ) {
+
+                backup.stores[store] =
+                    await getAll(
+                        store
+                    );
+
+            }
+
+
+            const blob =
+                new Blob(
+                    [
+                        JSON.stringify(
+                            backup,
+                            null,
+                            2
+                        )
+                    ],
+                    {
+                        type:
+                            "application/json"
+                    }
+                );
+
+
+            downloadFile(
+                blob,
+                `Al-Najma-backup-${today()}.json`
             );
 
 
-        downloadFile(
-            blob,
-            `Al-Najma-backup-${today()}.json`
-        );
+            showToast(
+                "Backup created."
+            );
+
+        };
+
+}
 
 
-        showToast(
-            "Backup created."
-        );
+if ($("#importBackup")) {
 
-    };
+    $("#importBackup").onchange =
+        async event => {
 
-
-$("#importBackup").onchange =
-    async event => {
-
-        const file =
-            event.target.files[0];
-
-        if (!file) return;
+            const file =
+                event.target.files[0];
 
 
-        try {
-
-            const data =
-                JSON.parse(
-                    await file.text()
-                );
+            if (!file) return;
 
 
-            if (!data.stores) {
+            try {
 
-                throw new Error(
-                    "Invalid backup"
-                );
-
-            }
+                const text =
+                    await file.text();
 
 
-            if (
-                !confirm(
-                    "Import this backup and replace the current local data?"
-                )
-            ) return;
+                const data =
+                    JSON.parse(
+                        text
+                    );
 
 
-            for (const store of STORES) {
-
-                await clearStore(store);
-
-            }
-
-
-            for (const store of STORES) {
-
-                for (
-                    const item
-                    of data.stores[store] || []
+                if (
+                    !data ||
+                    !data.stores ||
+                    typeof data.stores !==
+                        "object"
                 ) {
 
-                    await put(
-                        store,
-                        item
+                    throw new Error(
+                        "Invalid backup"
                     );
 
                 }
 
+
+                if (
+                    !confirm(
+                        "Import this backup and replace the current local data?"
+                    )
+                ) {
+
+                    event.target.value =
+                        "";
+
+                    return;
+
+                }
+
+
+                for (
+                    const store
+                    of STORES
+                ) {
+
+                    await clearStore(
+                        store
+                    );
+
+                }
+
+
+                for (
+                    const store
+                    of STORES
+                ) {
+
+                    const items =
+                        Array.isArray(
+                            data.stores[store]
+                        )
+                            ? data.stores[store]
+                            : [];
+
+
+                    for (
+                        const item
+                        of items
+                    ) {
+
+                        if (
+                            item &&
+                            item.id !==
+                                undefined
+                        ) {
+
+                            await put(
+                                store,
+                                item
+                            );
+
+                        }
+
+                    }
+
+                }
+
+
+                /*
+                   If an older backup did not
+                   contain the newer stores/settings,
+                   seed the missing defaults.
+                */
+
+                await seedDatabase();
+
+                await loadState();
+
+                await rebuildAllCustomers();
+
+                await refresh();
+
+
+                showToast(
+                    "Backup imported successfully."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                showToast(
+                    "Invalid backup file."
+                );
+
             }
 
 
-            await refresh();
+            event.target.value =
+                "";
 
-            showToast(
-                "Backup imported successfully."
-            );
+        };
 
-
-        } catch {
-
-            showToast(
-                "Invalid backup file."
-            );
-
-        }
-
-    };
+}
 
 
-function downloadFile(blob, filename) {
+function downloadFile(
+    blob,
+    filename
+) {
 
     const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
+
 
     const a =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
-    a.href = url;
-    a.download = filename;
+
+    a.href =
+        url;
+
+
+    a.download =
+        filename;
+
+
+    document.body.appendChild(
+        a
+    );
+
 
     a.click();
 
+
+    a.remove();
+
+
     setTimeout(
         () =>
-            URL.revokeObjectURL(url),
+            URL.revokeObjectURL(
+                url
+            ),
         2000
     );
 
@@ -4034,268 +6247,458 @@ function downloadFile(blob, filename) {
 
 
 /* =========================================================
-   DAILY CLOSING
+   DAILY CASH CLOSING
    ========================================================= */
 
-$("#closeDay").onclick =
-    () => {
+function getCashPosition(from, to) {
 
-        const data =
-            calculatePeriod(
-                today(),
-                today()
-            );
-
-
-        const cashSales =
-            data.orders
-                .filter(
-                    o => o.payment === "Cash"
-                )
-                .reduce(
-                    (sum,o) =>
-                        sum +
-                        Number(o.finalPrice || 0),
-                    0
-                );
-
-
-        openModal(
-
-            "Close Today's Cash",
-
-            `
-
-            <div class="stat-row">
-                <span>Cash Sales</span>
-                <b>${money(cashSales)}</b>
-            </div>
-
-            <div class="stat-row">
-                <span>Total Revenue</span>
-                <b>${money(data.revenue)}</b>
-            </div>
-
-            <div class="stat-row">
-                <span>Expenses</span>
-                <b>${money(data.expenseTotal)}</b>
-            </div>
-
-            <label>
-                Actual Cash Counted
-                <input
-                    id="closingCash"
-                    type="number"
-                    value="${cashSales}">
-            </label>
-
-            <label>
-                Closing Note
-                <input id="closingNote">
-            </label>
-
-            `,
-
-            async () => {
-
-                const actual =
-                    Number(
-                        $("#closingCash")
-                        .value
-                    ) || 0;
-
-
-                const closing = {
-
-                    id:today(),
-
-                    date:today(),
-
-                    createdAt:
-                        new Date()
-                        .toISOString(),
-
-                    cashSales,
-
-                    actualCash:
-                        actual,
-
-                    difference:
-                        actual - cashSales,
-
-                    revenue:
-                        data.revenue,
-
-                    expenses:
-                        data.expenseTotal,
-
-                    wages:
-                        data.wages,
-
-                    note:
-                        $("#closingNote")
-                        .value
-
-                };
-
-
-                await put(
-                    "closures",
-                    closing
-                );
-
-
-                await audit(
-                    "DAILY_CLOSING",
-                    closing
-                );
-
-
-                await refresh();
-
-                showToast(
-                    "Today's cash closed."
-                );
-
-            }
-
+    const sales =
+        ordersBetween(
+            from,
+            to
+        )
+        .filter(
+            o =>
+                o.payment ===
+                "Cash"
+        )
+        .reduce(
+            (sum,o) =>
+                sum +
+                safeNumber(
+                    o.finalPrice
+                ),
+            0
         );
+
+
+    const refunds =
+        refundedOrdersBetween(
+            from,
+            to
+        )
+        .filter(
+            o =>
+                o.payment ===
+                "Cash"
+        )
+        .reduce(
+            (sum,o) =>
+                sum +
+                safeNumber(
+                    o.finalPrice
+                ),
+            0
+        );
+
+
+    const expenses =
+        expensesBetween(
+            from,
+            to
+        )
+        .filter(
+            e =>
+                (
+                    e.payment ||
+                    "Cash"
+                ) ===
+                "Cash"
+        )
+        .reduce(
+            (sum,e) =>
+                sum +
+                safeNumber(
+                    e.amount
+                ),
+            0
+        );
+
+
+    return {
+
+        sales,
+
+        refunds,
+
+        expenses,
+
+        expected:
+            sales -
+            refunds -
+            expenses
 
     };
 
+}
 
-$("#printClosing").onclick =
-    () => {
 
-        const data =
-            calculatePeriod(
-                today(),
-                today()
+if ($("#closeDay")) {
+
+    $("#closeDay").onclick =
+        () => {
+
+            const data =
+                calculatePeriod(
+                    today(),
+                    today()
+                );
+
+
+            const cash =
+                getCashPosition(
+                    today(),
+                    today()
+                );
+
+
+            openModal(
+
+                "Close Today's Cash",
+
+                `
+
+                <div class="stat-row">
+                    <span>Cash Sales</span>
+                    <b>
+                        ${money(
+                            cash.sales
+                        )}
+                    </b>
+                </div>
+
+                <div class="stat-row">
+                    <span>Cash Refunds</span>
+                    <b>
+                        ${money(
+                            cash.refunds
+                        )}
+                    </b>
+                </div>
+
+                <div class="stat-row">
+                    <span>Cash Expenses</span>
+                    <b>
+                        ${money(
+                            cash.expenses
+                        )}
+                    </b>
+                </div>
+
+                <div class="stat-row">
+                    <span>Expected Cash</span>
+                    <b>
+                        ${money(
+                            cash.expected
+                        )}
+                    </b>
+                </div>
+
+                <div class="stat-row">
+                    <span>Total Revenue</span>
+                    <b>
+                        ${money(
+                            data.revenue
+                        )}
+                    </b>
+                </div>
+
+                <label>
+                    Actual Cash Counted
+                    <input
+                        id="closingCash"
+                        type="number"
+                        value="${cash.expected}">
+                </label>
+
+                <label>
+                    Closing Note
+                    <input
+                        id="closingNote">
+                </label>
+
+                `,
+
+                async () => {
+
+                    const actual =
+                        safeNumber(
+                            $("#closingCash")
+                                .value
+                        );
+
+
+                    const closing = {
+
+                        id:
+                            today(),
+
+                        date:
+                            today(),
+
+                        createdAt:
+                            new Date()
+                                .toISOString(),
+
+                        cashSales:
+                            cash.sales,
+
+                        cashRefunds:
+                            cash.refunds,
+
+                        cashExpenses:
+                            cash.expenses,
+
+                        expectedCash:
+                            cash.expected,
+
+                        actualCash:
+                            actual,
+
+                        difference:
+                            actual -
+                            cash.expected,
+
+                        revenue:
+                            data.revenue,
+
+                        expenses:
+                            data.expenseTotal,
+
+                        wages:
+                            data.wages,
+
+                        note:
+                            $("#closingNote")
+                                .value
+                                .trim()
+
+                    };
+
+
+                    await put(
+                        "closures",
+                        closing
+                    );
+
+
+                    await audit(
+                        "DAILY_CLOSING",
+                        closing
+                    );
+
+
+                    await refresh();
+
+
+                    showToast(
+                        "Today's cash closed."
+                    );
+
+                }
+
             );
 
+        };
 
-        const closing =
-            state.closures.find(
-                c => c.id === today()
-            );
+}
 
 
-        const w =
-            window.open(
-                "",
-                "_blank",
-                "width=420,height=650"
-            );
+if ($("#printClosing")) {
+
+    $("#printClosing").onclick =
+        () => {
+
+            const data =
+                calculatePeriod(
+                    today(),
+                    today()
+                );
 
 
-        if (!w) return;
+            const cash =
+                getCashPosition(
+                    today(),
+                    today()
+                );
 
 
-        w.document.write(`
+            const closing =
+                state.closures.find(
+                    c =>
+                        c.id ===
+                        today()
+                );
 
-        <html>
 
-        <body style="
-        font-family:Arial;
-        padding:25px;
-        ">
+            const w =
+                window.open(
+                    "",
+                    "_blank",
+                    "width=420,height=700"
+                );
 
-        <h2>
-        ✦ AL NAJMA
-        </h2>
 
-        <h3>
-        DAILY CLOSING
-        </h3>
+            if (!w) {
 
-        <p>
-        ${today()}
-        </p>
+                showToast(
+                    "Allow popups to print."
+                );
 
-        <hr>
+                return;
 
-        <p>
-        Cars:
-        <b>${data.cars}</b>
-        </p>
+            }
 
-        <p>
-        Revenue:
-        <b>${money(data.revenue)}</b>
-        </p>
 
-        <p>
-        Expenses:
-        <b>${money(data.expenseTotal)}</b>
-        </p>
+            w.document.write(`
 
-        <p>
-        Worker Wages:
-        <b>${money(data.wages)}</b>
-        </p>
+            <html>
 
-        <p>
-        Net:
-        <b>${money(data.profit)}</b>
-        </p>
+            <body style="
+            font-family:Arial;
+            padding:25px;
+            ">
 
-        ${
-            closing
+            <h2>
+            ✦ AL NAJMA
+            </h2>
 
-            ? `
+            <h3>
+            DAILY CLOSING
+            </h3>
+
+            <p>
+            ${today()}
+            </p>
 
             <hr>
 
             <p>
+            Cars:
+            <b>${data.cars}</b>
+            </p>
+
+            <p>
+            Revenue:
+            <b>${money(
+                data.revenue
+            )}</b>
+            </p>
+
+            <p>
+            Expenses:
+            <b>${money(
+                data.expenseTotal
+            )}</b>
+            </p>
+
+            <p>
+            Worker Wages:
+            <b>${money(
+                data.wages
+            )}</b>
+            </p>
+
+            <p>
+            Net:
+            <b>${money(
+                data.profit
+            )}</b>
+            </p>
+
+            <hr>
+
+            <p>
+            Cash Sales:
+            <b>${money(
+                cash.sales
+            )}</b>
+            </p>
+
+            <p>
+            Cash Refunds:
+            <b>${money(
+                cash.refunds
+            )}</b>
+            </p>
+
+            <p>
+            Cash Expenses:
+            <b>${money(
+                cash.expenses
+            )}</b>
+            </p>
+
+            <p>
             Expected Cash:
             <b>${money(
-                closing.cashSales
+                cash.expected
             )}</b>
             </p>
 
-            <p>
-            Actual Cash:
-            <b>${money(
-                closing.actualCash
-            )}</b>
-            </p>
+            ${
+                closing
+                ? `
 
-            <p>
-            Difference:
-            <b>${money(
-                closing.difference
-            )}</b>
-            </p>
+                <p>
+                Actual Cash:
+                <b>${money(
+                    closing.actualCash
+                )}</b>
+                </p>
 
-            `
+                <p>
+                Difference:
+                <b>${money(
+                    closing.difference
+                )}</b>
+                </p>
 
-            : ""
-        }
+                `
+                : ""
+            }
 
-        <script>
-        window.onload=()=>window.print()
-        <\/script>
+            <script>
+            window.onload=()=>window.print()
+            <\/script>
 
-        </body>
+            </body>
 
-        </html>
+            </html>
 
-        `);
+            `);
 
-        w.document.close();
 
-    };
+            w.document.close();
+
+        };
+
+}
 
 
 /* =========================================================
    MODAL
    ========================================================= */
 
-function openModal(title, body, saveFunction) {
+function openModal(
+    title,
+    body,
+    saveFunction
+) {
+
+    if (
+        !$("#modal") ||
+        !$("#modalBody")
+    ) {
+        return;
+    }
+
 
     $("#modalBody").innerHTML = `
 
-        <h2>${title}</h2>
+        <h2>
+            ${escapeHTML(title)}
+        </h2>
 
         ${body}
 
@@ -4303,7 +6706,8 @@ function openModal(title, body, saveFunction) {
 
 
     $("#modal")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
 
     const form =
@@ -4317,9 +6721,24 @@ function openModal(title, body, saveFunction) {
 
                 event.preventDefault();
 
-                await saveFunction();
 
-                closeModal();
+                try {
+
+                    await saveFunction();
+
+                    closeModal();
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+                    showToast(
+                        "Could not save."
+                    );
+
+                }
 
             };
 
@@ -4328,14 +6747,32 @@ function openModal(title, body, saveFunction) {
         const button =
             $("#modalBody .gold-button");
 
+
         if (button) {
 
             button.onclick =
-                async () => {
+                async event => {
 
-                    await saveFunction();
+                    event.preventDefault();
 
-                    closeModal();
+
+                    try {
+
+                        await saveFunction();
+
+                        closeModal();
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+                        showToast(
+                            "Could not save."
+                        );
+
+                    }
 
                 };
 
@@ -4348,29 +6785,42 @@ function openModal(title, body, saveFunction) {
 
 function closeModal() {
 
-    $("#modal")
-        .classList.add("hidden");
+    if ($("#modal")) {
+
+        $("#modal")
+            .classList
+            .add("hidden");
+
+    }
 
 }
 
 
-$("#closeModal").onclick =
-    closeModal;
+if ($("#closeModal")) {
+
+    $("#closeModal").onclick =
+        closeModal;
+
+}
 
 
-$("#modal").onclick =
-    event => {
+if ($("#modal")) {
 
-        if (
-            event.target.id ===
-            "modal"
-        ) {
+    $("#modal").onclick =
+        event => {
 
-            closeModal();
+            if (
+                event.target.id ===
+                "modal"
+            ) {
 
-        }
+                closeModal();
 
-    };
+            }
+
+        };
+
+}
 
 
 /* =========================================================
@@ -4378,6 +6828,11 @@ $("#modal").onclick =
    ========================================================= */
 
 function updateConnection() {
+
+    if (!$("#connectionStatus")) {
+        return;
+    }
+
 
     $("#connectionStatus")
         .textContent =
@@ -4393,51 +6848,87 @@ window.addEventListener(
     updateConnection
 );
 
+
 window.addEventListener(
     "offline",
     updateConnection
 );
 
 
-setInterval(() => {
+setInterval(
+    () => {
 
-    $("#liveClock")
-        .textContent =
-            new Date().toLocaleString();
+        if ($("#liveClock")) {
 
-},1000);
+            $("#liveClock")
+                .textContent =
+                    new Date()
+                        .toLocaleString();
+
+        }
+
+    },
+    1000
+);
 
 
 /* =========================================================
    DELETE EVERYTHING
    ========================================================= */
 
-$("#deleteData").onclick =
-    async () => {
+if ($("#deleteData")) {
 
-        if (
-            !confirm(
-                "Delete ALL business data on this device? This cannot be undone. Make a backup first."
-            )
-        ) return;
+    $("#deleteData").onclick =
+        async () => {
 
-
-        for (const store of STORES) {
-
-            await clearStore(store);
-
-        }
+            if (
+                !confirm(
+                    "Delete ALL business data on this device? This cannot be undone. Make a backup first."
+                )
+            ) {
+                return;
+            }
 
 
-        await seedDatabase();
+            /*
+               Extra confirmation for destructive
+               operation.
+            */
 
-        await refresh();
+            if (
+                !confirm(
+                    "Are you absolutely sure? All orders, customers, workers, packages, expenses and reports will be deleted."
+                )
+            ) {
+                return;
+            }
 
-        showToast(
-            "Business data reset."
-        );
 
-    };
+            for (
+                const store
+                of STORES
+            ) {
+
+                await clearStore(
+                    store
+                );
+
+            }
+
+
+            await seedDatabase();
+
+
+            await refresh();
+
+
+            showToast(
+                "Business data reset."
+            );
+
+        };
+
+}
 
 
 /* =========================================================
@@ -4454,8 +6945,22 @@ async function init() {
 
         await loadState();
 
+        /*
+           Repair/rebuild customer statistics
+           when opening the app. This also repairs
+           data created by the previous version.
+        */
+
+        await rebuildAllCustomers();
+
+        await loadState();
+
+
         exportPeriod =
-            getExportPeriod("today");
+            getExportPeriod(
+                "today"
+            );
+
 
         updateConnection();
 
@@ -4468,13 +6973,19 @@ async function init() {
         ) {
 
             await navigator.serviceWorker
-                .register("./sw.js");
+                .register(
+                    "./sw.js"
+                );
 
         }
 
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            error
+        );
+
 
         showToast(
             "Could not start the database."
